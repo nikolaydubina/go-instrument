@@ -20,6 +20,7 @@ Other languages can either modify code or have wrapper notations that makes even
 
 As of `2022-11-06`, official Go does not support automatic function traces. https://go.dev/doc/diagnostics
 > Is there a way to automatically intercept each function call and create traces?  
+>   
 > Go doesn’t provide a way to automatically intercept every function call and create trace spans. You need to manually instrument your code to create, end, and annotate spans.
 
 Thus, providing automated version to add Trace Spans annotation.
