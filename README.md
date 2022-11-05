@@ -2,7 +2,7 @@
 
 > Automatically add Trace Spans to Go functions
 
-- Method 1: generate new class wrapper of original one that adds spans + need to ask original code to wrap classes
+- Method 1: generate new class wrapper in /<pkg>/trace of original one that adds spans + need to ask original code to wrap classes
 - Method 2: inline calls for tracing
 
 ## Performance Impact
@@ -106,3 +106,8 @@ def do_work():
 ### C++
 
 ❌ Only manual instrumentation.
+
+### Appendix C: Paths Not Taken
+
+- modify existing file by inlining trace calls to top of function — to avoid modifying original user code as much as possible
+- generate files within same packages - to avoid corrupting code coverage and code statistics
