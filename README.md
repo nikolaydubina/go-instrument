@@ -1,19 +1,24 @@
 # go-auto-instrument-trace
 
-> Automatically add Trace Spans to Go functions
+> Automatically add Trace Spans to Go methods and functions
+
+* Code is not modified
+* No new dependencies
 
 TODO:
 - generate new class wrapper in `/<pkg>/trace` of original one that adds spans
 - generate functions with same name in `/<pkg>/trace` of original one that adds spans
 - ask to switch pkg in original code
 
-## Performance Impact
+## Motivation
 
-Since we are adding extra calls in all functions, compiler may change its behavior, this can lead to performance deterioration.
+It is very cumbersom to add tracing code to every function manually.
+This code repeats and is not different 99% of time.
+Other languages can either modify code or have wrapper notations that makes even manual tracing much less laborious.
 
-### Function Inlining
-
-????
+As of `2022-11-06`, official Go does not support automatic function traces. https://go.dev/doc/diagnostics
+> Is there a way to automatically intercept each function call and create traces?  
+> Go doesn’t provide a way to automatically intercept every function call and create trace spans. You need to manually instrument your code to create, end, and annotate spans.
 
 ## Appendix A: Related Work
 
@@ -108,8 +113,3 @@ def do_work():
 ### C++
 
 ❌ Only manual instrumentation.
-
-### Appendix C: Paths Not Taken
-
-- modify existing file by inlining trace calls to top of function — to avoid modifying original user code as much as possible
-- generate files within same packages - to avoid corrupting code coverage and code statistics
