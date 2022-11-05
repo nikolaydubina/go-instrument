@@ -1,4 +1,4 @@
-# go-auto-instrument-trace
+# go-auto-instrument
 
 > Automatically add Trace Spans to Go methods and functions
 
