@@ -54,9 +54,7 @@ public class MyClass {
 
 ✅ Automatic instrumentation of all functions is also possible.
 
-For example, Datadog supports this.
-It is also possible to configure list of methods to instrument automatically.
-It is possible to instrument all methods with wildcard `*`, with some exceptions.
+Datadog supports wildcard for list of methods to trace.
 
 > dd.trace.methods  
 > Environment Variable: DD_TRACE_METHODS  
