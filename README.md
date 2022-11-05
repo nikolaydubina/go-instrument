@@ -4,6 +4,7 @@
 
 * Code is not modified
 * No new dependencies
+* OpenTelemetry support
 
 TODO:
 - same pkg name
