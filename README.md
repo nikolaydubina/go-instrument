@@ -12,13 +12,15 @@ TODO:
 
 ## Motivation
 
-It is very cumbersom to add tracing code to every function manually.
-This code repeats and is not different 99% of time.
+It is laborious to add tracing code to every function manually.
+The code repeats 99% of time.
 Other languages can either modify code or have wrapper notations that makes even manual tracing much less laborious.
 
 As of `2022-11-06`, official Go does not support automatic function traces. https://go.dev/doc/diagnostics
 > Is there a way to automatically intercept each function call and create traces?  
 > Go doesn’t provide a way to automatically intercept every function call and create trace spans. You need to manually instrument your code to create, end, and annotate spans.
+
+Thus, providing automated version to add Trace Spans annotation.
 
 ## Appendix A: Related Work
 
