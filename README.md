@@ -25,6 +25,8 @@ Thus, providing automated version to add Trace Spans annotation.
 ## Appendix A: Related Work
 
 * https://github.com/hedhyw/otelinji — It modifies code to inline tracing fuinction calls. It is flexible and handles Go code well (name of `context.Context`, `error`, comments). Meanwhile, current project focuses on minimal code, minimal dependencies, and no changes to original code.
+* https://github.com/open-telemetry/opentelemetry-go-instrumentation - (In-Development) official eBPF based Go auto instrumentation
+* https://github.com/keyval-dev/opentelemetry-go-instrumentation - eBPF based Go auto instrumentation of _pre-selected_ libraries
 
 ## Appendix B: Other Languages
 
