@@ -1,0 +1,1 @@
+# go-otel-auto-instrument
