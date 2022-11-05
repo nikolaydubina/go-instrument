@@ -2,8 +2,8 @@
 
 > Automatically add Trace Spans to Go functions
 
-Method 1: generate new class wrapper of original one that adds spans + need to ask original code to wrap classes
-Method 2: inline calls for tracing
+- Method 1: generate new class wrapper of original one that adds spans + need to ask original code to wrap classes
+- Method 2: inline calls for tracing
 
 ## Performance Impact
 
