@@ -17,7 +17,7 @@ Since we are adding extra calls in all functions, compiler may change its behavi
 
 ## Appendix A: Related Work
 
-* https://github.com/hedhyw/otelinji — It modifies code to inline tracing fuinction calls. It is flexible and handles Go code well (name of `context.Context`, `error`, comments). Meanwhile, current project focuses on minimal code and dependencies.
+* https://github.com/hedhyw/otelinji — It modifies code to inline tracing fuinction calls. It is flexible and handles Go code well (name of `context.Context`, `error`, comments). Meanwhile, current project focuses on minimal code, minimal dependencies, and no changes to original code.
 
 ## Appendix B: Other Languages
 
