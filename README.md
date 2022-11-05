@@ -1,4 +1,4 @@
-# go-otel-auto-instrument
+# instrument
 
 > Automatically add Trace Spans to Go functions
 
