@@ -25,6 +25,15 @@ As of `2022-11-06`, official Go does not support automatic function traces. http
 
 Thus, providing automated version to add Trace Spans annotation.
 
+## Implementation Details
+
+### Why package name is different?
+
+It would see more convenient to keep same name of package so that callsites don't have to udpate anything except import path.
+However, that would require copying all symbols: variables; constatnts; interfaces; constraints and assigning values from original package, which may complicate if original package mutates those values in `init` or throughout lifetime.
+
+If needed, package can still be renamed on import to match original name.
+
 ## Appendix A: Related Work
 
 * https://github.com/hedhyw/otelinji — It modifies code to inline tracing fuinction calls. It is flexible and handles Go code well (name of `context.Context`, `error`, comments). Meanwhile, current project focuses on minimal code, minimal dependencies, and no changes to original code.
