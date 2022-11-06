@@ -4,7 +4,7 @@
 
 * Code is not modified
 * No new dependencies
-* OpenTelemetry support
+* OpenTelemetry (Datadog, NewRelic)
 
 TODO:
 - new pkg name
