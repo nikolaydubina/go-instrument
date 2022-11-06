@@ -7,7 +7,7 @@
 * OpenTelemetry support
 
 TODO:
-- same pkg name
+- new pkg name
 - generate new class wrapper in `/<pkg>/trace` of original one that adds spans
 - generate functions with same name in `/<pkg>/trace` of original one that adds spans
 - ask to switch pkg in original code
