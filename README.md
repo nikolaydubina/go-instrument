@@ -8,6 +8,8 @@
 TODO
 - inline calls to trace
 - example http project and datadog traces
+- `context.Context` variable name
+- `error` varaible name
 
 To keep code minimal, certain cases not supported:
 - custom `error` return type
