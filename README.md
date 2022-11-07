@@ -9,6 +9,10 @@ TODO
 - inline calls to trace
 - example http project and datadog traces
 
+To keep code minimal, certain cases not supported:
+- custom `error` return type
+- un-named `error` in return
+
 ## Motivation
 
 It is laborious to add tracing code to every function manually.
