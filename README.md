@@ -10,6 +10,7 @@ TODO
 - example http project and datadog traces
 - `context.Context` variable name
 - `error` varaible name
+- check inlining impact
 
 ## Motivation
 
@@ -23,6 +24,12 @@ As of `2022-11-06`, official Go does not support automatic function traces. http
 > Go doesn’t provide a way to automatically intercept every function call and create trace spans. You need to manually instrument your code to create, end, and annotate spans.
 
 Thus, providing automated version to add Trace Spans annotation.
+
+## Performance
+
+### Inlining
+
+TODO
 
 ## Appendix A: Related Work
 
