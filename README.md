@@ -133,10 +133,10 @@ Given every single function is duplciated and is within same package, code will 
 
 ### Wrapping exported functions
 
-Typically packages are failry big and performs lots of logic.
-Oftencase business domains are split only in few large packages.
-Lower level packages are already likely to be traced with standard tracing (MySQL, `het/http`, etc).
-Thus it is doubtful how much benefit would be from tracing only exported functions and only on import.
+Typically, packages are failry big and performs lots of logic.
+Oftencase, business domains are split only in few large packages.
+Low level packages are already likely to be traced with standard tracing (MySQL, `het/http`, etc).
+Thus, it is doubtful how much benefit would be from tracing only exported functions and only on import.
 
 ### Wrapping exported functions with separate package
 
