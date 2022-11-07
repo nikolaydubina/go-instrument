@@ -2,15 +2,12 @@
 
 > Automatically add Trace Spans to Go methods and functions
 
-* Code is not modified
 * No new dependencies
 * OpenTelemetry (Datadog, NewRelic)
 
-TODO:
-- new pkg name
-- generate new class wrapper in `/<pkg>/trace` of original one that adds spans
-- generate functions with same name in `/<pkg>/trace` of original one that adds spans
-- ask to switch pkg in original code
+TODO
+- inline calls to trace
+- example http project and datadog traces
 
 ## Motivation
 
@@ -25,19 +22,10 @@ As of `2022-11-06`, official Go does not support automatic function traces. http
 
 Thus, providing automated version to add Trace Spans annotation.
 
-## Implementation Details
-
-### Why package name is different?
-
-It would see more convenient to keep same name of package so that callsites don't have to udpate anything except import path.
-However, that would require copying all symbols: variables; constatnts; interfaces; constraints and assigning values from original package, which may complicate if original package mutates those values in `init` or throughout lifetime.
-
-If needed, package can still be renamed on import to match original name.
-
 ## Appendix A: Related Work
 
-* https://github.com/hedhyw/otelinji — It modifies code to inline tracing fuinction calls. It is flexible and handles Go code well (name of `context.Context`, `error`, comments). Meanwhile, current project focuses on minimal code, minimal dependencies, and no changes to original code.
-* https://github.com/open-telemetry/opentelemetry-go-instrumentation - (In-Development) official eBPF based Go auto instrumentation
+* https://github.com/hedhyw/otelinji — It modifies code to inline tracing fuinction calls. It is flexible and handles Go code well (name of `context.Context`, `error`, comments). Overall it is very similar to current project. Main difference is current project focuses on minimal code and changes.
+* https://github.com/open-telemetry/opentelemetry-go-instrumentation - (in development) official eBPF based Go auto instrumentation
 * https://github.com/keyval-dev/opentelemetry-go-instrumentation - eBPF based Go auto instrumentation of _pre-selected_ libraries
 
 ## Appendix B: Other Languages
@@ -129,3 +117,28 @@ def do_work():
 ### C++
 
 ❌ Only manual instrumentation.
+
+## Appendix C: Paths Not Taken
+
+### eBPF
+
+With eBPF we can track latency, but we would not be able to assign errors to spans.
+Some platforms may not have access to eBPF.
+
+### Wrapping internal functions
+
+Benefit of wrapping is to keep original code without modifications.
+However, manual step for switching would still be requied.
+Given every single function is duplciated and is within same package, code will quickly become messy and hard to maintain by user.
+
+### Wrapping exported functions
+
+Typically packages are failry big and performs lots of logic.
+Oftencase business domains are split only in few large packages.
+Lower level packages are already likely to be traced with standard tracing (MySQL, `het/http`, etc).
+Thus it is doubtful how much benefit would be from tracing only exported functions and only on import.
+
+### Wrapping exported functions with separate package
+
+This would lead to circular dependency failure, since some even exported functions in original package may be called withing same package.
+Thus, we would either skip those calls, or fail with circular dependency while trying to wrap those.
