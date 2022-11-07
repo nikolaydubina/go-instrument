@@ -11,7 +11,7 @@ TODO
 - `context.Context` variable name
 - `error` varaible name
 
-To keep code minimal, certain cases not supported:
+To keep code minimal, certain cases are not supported:
 - custom `error` return type
 - un-named `error` in return
 
