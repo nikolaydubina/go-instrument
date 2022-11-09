@@ -5,6 +5,7 @@ import (
 	"go/parser"
 	"go/printer"
 	"go/token"
+	"io"
 	"log"
 	"os"
 
@@ -14,15 +15,13 @@ import (
 
 func main() {
 	var (
-		fileName   string
-		overwrite  bool
-		tracerName string
-		verbosity  int
+		fileName  string
+		overwrite bool
+		app       string
 	)
-	flag.StringVar(&fileName, "file", "", "go file to instrument")
-	flag.StringVar(&tracerName, "tracer-name", "app", "name of tracer")
+	flag.StringVar(&fileName, "filename", "", "go file to instrument")
+	flag.StringVar(&app, "app", "app", "name of application")
 	flag.BoolVar(&overwrite, "w", false, "overwrite original file")
-	flag.IntVar(&verbosity, "v", 0, "verbositry of STDERR logs")
 	flag.Parse()
 
 	if fileName == "" {
@@ -37,9 +36,9 @@ func main() {
 	}
 
 	var instrumenter processor.Instrumenter = &instrument.OpenTelemetry{
-		TracerName:  tracerName,
+		TracerName:  app,
 		ContextName: "ctx",
-		ErrorName:   "error",
+		ErrorName:   "err",
 	}
 	p := processor.Processor{
 		Instrumenter:   instrumenter,
@@ -52,5 +51,14 @@ func main() {
 	}
 	p.Process(fset, file)
 
-	printer.Fprint(os.Stdout, fset, file)
+	var out io.Writer = os.Stdout
+	if overwrite {
+		out, err = os.OpenFile(fileName, os.O_RDWR|os.O_TRUNC, 0)
+		if err != nil {
+			log.Fatal(err)
+		}
+	}
+	if err := printer.Fprint(out, fset, file); err != nil {
+		log.Fatal(err)
+	}
 }
