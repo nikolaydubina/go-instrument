@@ -10,6 +10,8 @@ import (
 	"os"
 
 	"golang.org/x/tools/go/ast/astutil"
+
+	"github.com/nikolaydubina/go-instrument/instrument"
 )
 
 const (
@@ -19,45 +21,6 @@ const (
 	errorName      = "err"
 	errorType      = `error`
 )
-
-func expFuncSet(tracerName, spanName string) ast.Expr {
-	return &ast.CallExpr{
-		Fun: &ast.SelectorExpr{
-			X: &ast.CallExpr{
-				Fun:  &ast.SelectorExpr{X: &ast.Ident{Name: "otel"}, Sel: &ast.Ident{Name: "Trace"}},
-				Args: []ast.Expr{&ast.BasicLit{Kind: token.STRING, Value: `"` + tracerName + `"`}},
-			},
-			Sel: &ast.Ident{Name: "Start"},
-		},
-		Args: []ast.Expr{&ast.Ident{Name: "ctx"}, &ast.BasicLit{Kind: token.STRING, Value: `"` + spanName + `"`}},
-	}
-}
-
-func exprFuncSetSpanError() ast.Expr {
-	return &ast.FuncLit{
-		Type: &ast.FuncType{},
-		Body: &ast.BlockStmt{List: []ast.Stmt{
-			&ast.IfStmt{
-				Cond: &ast.BinaryExpr{X: &ast.Ident{Name: "err"}, Op: token.NEQ, Y: &ast.Ident{Name: "nil"}},
-				Body: &ast.BlockStmt{List: []ast.Stmt{
-					&ast.ExprStmt{X: &ast.CallExpr{
-						Fun: &ast.SelectorExpr{X: &ast.Ident{Name: "span"}, Sel: &ast.Ident{Name: "SetStatus"}},
-						Args: []ast.Expr{
-							&ast.SelectorExpr{X: &ast.Ident{Name: "codes"}, Sel: &ast.Ident{Name: "Error"}},
-							&ast.BasicLit{Kind: token.STRING, Value: `"error"`},
-						},
-					}},
-					&ast.ExprStmt{X: &ast.CallExpr{
-						Fun: &ast.SelectorExpr{X: &ast.Ident{Name: "span"}, Sel: &ast.Ident{Name: "RecordError"}},
-						Args: []ast.Expr{
-							&ast.Ident{Name: errorName},
-						},
-					}},
-				}},
-			},
-		}},
-	}
-}
 
 func methodReceiverTypeName(spec ast.FuncDecl) string {
 	// function
@@ -140,17 +103,28 @@ func isError(e ast.Field) bool {
 	return false
 }
 
+const (
+	frameworkOpenTelemetry = "open-telemetry"
+)
+
+type Instrumenter interface {
+	Imports() []string
+	PrefixStatements(spanName string, hasError bool) []ast.Stmt
+}
+
 func main() {
 	var (
 		fileName   string
 		overwrite  bool
 		tracerName string
 		verbosity  int
+		framework  string
 	)
 	flag.StringVar(&fileName, "file", "", "go file to instrument")
 	flag.StringVar(&tracerName, "tracer-name", "app", "name of tracer")
 	flag.BoolVar(&overwrite, "w", false, "overwrite original file")
 	flag.IntVar(&verbosity, "v", 0, "verbositry of STDERR logs")
+	flag.StringVar(&framework, "framework", frameworkOpenTelemetry, `framework for instrumentation ("`+frameworkOpenTelemetry+`")`)
 	flag.Parse()
 
 	fset := token.NewFileSet()
@@ -164,7 +138,11 @@ func main() {
 		log.Fatalf("can not parse input file: %s", err)
 	}
 
-	hasErrorFile := false
+	var instrumenter Instrumenter = &instrument.OpenTelemetry{
+		TracerName:  tracerName,
+		ContextName: contextName,
+		ErrorName:   errorName,
+	}
 
 	astutil.Apply(file, nil, func(c *astutil.Cursor) bool {
 		if c == nil {
@@ -201,7 +179,6 @@ func main() {
 			}
 		}
 
-		hasErrorFile = hasErrorFile || hasError
 		if verbosity > 0 {
 			log.Printf("%s: has_context(%t) has_error(%t)\n", spanName, hasContext, hasError)
 		}
@@ -210,30 +187,15 @@ func main() {
 			return true
 		}
 
-		stmts := []ast.Stmt{
-			&ast.AssignStmt{
-				Tok: token.DEFINE,
-				Lhs: []ast.Expr{&ast.Ident{Name: contextName}, &ast.Ident{Name: "span"}},
-				Rhs: []ast.Expr{expFuncSet(tracerName, spanName)},
-			},
-			&ast.DeferStmt{Call: &ast.CallExpr{
-				Fun: &ast.SelectorExpr{X: &ast.Ident{Name: "span"}, Sel: &ast.Ident{Name: "End"}},
-			}},
-		}
-		if hasError {
-			stmts = append(stmts, &ast.DeferStmt{Call: &ast.CallExpr{Fun: exprFuncSetSpanError()}})
-		}
-
-		fn.Body.List = append(stmts, fn.Body.List...)
+		fn.Body.List = append(instrumenter.PrefixStatements(spanName, hasError), fn.Body.List...)
 
 		c.Replace(fn)
 
 		return true
 	})
 
-	astutil.AddImport(fset, file, "go.opentelemetry.io/otel")
-	if hasErrorFile {
-		astutil.AddImport(fset, file, "go.opentelemetry.io/otel/codes")
+	for _, q := range instrumenter.Imports() {
+		astutil.AddImport(fset, file, q)
 	}
 
 	printer.Fprint(os.Stdout, fset, file)
