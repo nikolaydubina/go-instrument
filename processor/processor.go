@@ -7,7 +7,7 @@ import (
 	"golang.org/x/tools/go/ast/astutil"
 )
 
-// Instrumenter adds instrumentation code to methods and functions and all supporting muttations to file.
+// Instrumenter supplies ast of Go code that will be inserted and required dependencies.
 type Instrumenter interface {
 	Imports() []string
 	PrefixStatements(spanName string, hasError bool) []ast.Stmt
