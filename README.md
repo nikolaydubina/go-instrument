@@ -5,12 +5,9 @@
 * No new dependencies
 * OpenTelemetry (Datadog, NewRelic)
 
-TODO
-- inline calls to trace
-- example http project and datadog traces
-- `context.Context` variable name
-- `error` varaible name
-- check inlining impact
+To be instrumented function or method has to:
+1. accept `ctx context.Context`
+2. (optional) return `err error`, in which case this error will be used to mark Span as error status
 
 ## Motivation
 
@@ -33,9 +30,10 @@ TODO
 
 ## Appendix A: Related Work
 
-* https://github.com/hedhyw/otelinji — It modifies code to inline tracing fuinction calls. It is flexible and handles Go code well (name of `context.Context`, `error`, comments). Overall it is very similar to current project. Main difference is current project focuses on minimal code and changes.
+* https://github.com/hedhyw/otelinji — Very similar to current project. Main difference is current project focuses on minimal code and dependencies.
 * https://github.com/open-telemetry/opentelemetry-go-instrumentation - (in development) official eBPF based Go auto instrumentation
 * https://github.com/keyval-dev/opentelemetry-go-instrumentation - eBPF based Go auto instrumentation of _pre-selected_ libraries
+* https://developers.mattermost.com/blog/instrumenting-go-code-via-ast - Very similar. Instrumenting Go code for tracing.
 
 ## Appendix B: Other Languages
 
