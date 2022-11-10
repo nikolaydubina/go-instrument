@@ -40,10 +40,23 @@ func Basic(ctx context.Context) (err error) {
 }
 
 func Comment(ctx context.Context) int {
-	//some-comment first line
-	//some-comment second line
+	// some-comment first line
+	// some-comment second line
 	return 43
 }
+
+func Skip(ctx context.Context) {}
+
+func SkipTwo(ctx context.Context) {
+	//go:instrument -skip=SkipTwo
+}
+
+func WillNotSkipThree(ctx context.Context) { /* go:instrument -skip=SkipThree */ }
+
+//go:instrument -skip=Skip|Something
+
+// go:instrument -skip=WillNotSkipFour
+func WillNotSkipFour(ctx context.Context) {}
 
 func CommentMultiline() error {
 	/*

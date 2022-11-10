@@ -28,13 +28,6 @@ func main() {
 		log.Fatalln("missing arg: file name")
 	}
 
-	fset := token.NewFileSet()
-
-	file, err := parser.ParseFile(fset, fileName, nil, 0)
-	if err != nil {
-		log.Fatalf("can not parse input file: %s", err)
-	}
-
 	var instrumenter processor.Instrumenter = &instrument.OpenTelemetry{
 		TracerName:  app,
 		ContextName: "ctx",
@@ -49,8 +42,30 @@ func main() {
 		ErrorName:      "err",
 		ErrorType:      `error`,
 	}
-	p.Process(fset, file)
 
+	fset := token.NewFileSet()
+
+	// extract all commands from file comments
+	fileWithComments, err := parser.ParseFile(fset, fileName, nil, parser.ParseComments)
+	if err != nil || fileWithComments == nil {
+		log.Fatalf("can not parse input file: %s", err)
+	}
+	commands, err := processor.CommandsFromFile(*fileWithComments)
+	if err != nil {
+		log.Fatal(err)
+	}
+	p.ApplyCommand(commands...)
+
+	// process without comments
+	file, err := parser.ParseFile(fset, fileName, nil, 0)
+	if err != nil || file == nil {
+		log.Fatalf("can not parse input file: %s", err)
+	}
+	if err := p.Process(fset, *file); err != nil {
+		log.Fatal(err)
+	}
+
+	// output
 	var out io.Writer = os.Stdout
 	if overwrite {
 		out, err = os.OpenFile(fileName, os.O_RDWR|os.O_TRUNC, 0)

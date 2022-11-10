@@ -5,7 +5,7 @@
 This tool uses standard Go library to modify AST with instrumentation. Use this in your CI before compilation. It is also possible to track generated code, however comments will be missing. You can add instrumentation by defining your own `Instrumenter` and invoking `Processor` like it is done in `main`.
 
 * No dependencies
-* 300 LOC
+* 400 LOC
 * OpenTelemetry (Datadog, NewRelic, etc.)
 
 ```bash
@@ -43,10 +43,14 @@ Example HTTP server [go-instrument-example](https://github.com/nikolaydubina/go-
 
 ### Skip
 
-To avoid instrumentation of function add comment to function body at the top.
+To avoid instrumentation of function add comment anywhere in the file.
+
 ```go
+//go:instrument -skip=SomeFunc|SomeOtherfunc|privateFunc
+...
+
 func (s Cat) Name(ctx context.Context) (name string, err error) {
-  //go:instrument skip
+  //go:instrument -skip=Name
 ```
 
 ### Errors

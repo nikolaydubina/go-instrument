@@ -30,9 +30,23 @@ type Processor struct {
 	ContextType    string
 	ErrorName      string
 	ErrorType      string
+
+	skipFunctions map[string]bool
 }
 
-func (p Processor) methodReceiverTypeName(spec ast.FuncDecl) string {
+func (p *Processor) ApplyCommand(command ...Command) {
+	if p.skipFunctions == nil {
+		p.skipFunctions = map[string]bool{}
+	}
+
+	for _, q := range command {
+		for _, s := range q.Skip {
+			p.skipFunctions[s] = true
+		}
+	}
+}
+
+func (p *Processor) methodReceiverTypeName(spec ast.FuncDecl) string {
 	// function
 	if spec.Recv == nil {
 		return ""
@@ -55,14 +69,14 @@ func (p Processor) methodReceiverTypeName(spec ast.FuncDecl) string {
 	return ""
 }
 
-func (p Processor) functionName(spec ast.FuncDecl) string {
+func (p *Processor) functionName(spec ast.FuncDecl) string {
 	if spec.Name == nil {
 		return ""
 	}
 	return spec.Name.Name
 }
 
-func (p Processor) isContext(e ast.Field) bool {
+func (p *Processor) isContext(e ast.Field) bool {
 	// anonymous arg
 	// multilple symbols
 	// strange symbol
@@ -88,7 +102,7 @@ func (p Processor) isContext(e ast.Field) bool {
 	return pkg == p.ContextPackage && sym == p.ContextType
 }
 
-func (p Processor) isError(e ast.Field) bool {
+func (p *Processor) isError(e ast.Field) bool {
 	// anonymous arg
 	// multilple symbols
 	// strange symbol
@@ -106,8 +120,8 @@ func (p Processor) isError(e ast.Field) bool {
 	return false
 }
 
-func (p Processor) Process(fset *token.FileSet, file *ast.File) {
-	astutil.Apply(file, nil, func(c *astutil.Cursor) bool {
+func (p *Processor) Process(fset *token.FileSet, file ast.File) error {
+	astutil.Apply(&file, nil, func(c *astutil.Cursor) bool {
 		if c == nil {
 			return true
 		}
@@ -117,7 +131,12 @@ func (p Processor) Process(fset *token.FileSet, file *ast.File) {
 			return true
 		}
 
-		spanName := p.SpanName(p.methodReceiverTypeName(*fn), p.functionName(*fn))
+		fname := p.functionName(*fn)
+		if p.skipFunctions[fname] {
+			return true
+		}
+
+		spanName := p.SpanName(p.methodReceiverTypeName(*fn), fname)
 
 		hasContext := false
 		hasError := false
@@ -154,6 +173,8 @@ func (p Processor) Process(fset *token.FileSet, file *ast.File) {
 	})
 
 	for _, q := range p.Instrumenter.Imports() {
-		astutil.AddImport(fset, file, q)
+		astutil.AddImport(fset, &file, q)
 	}
+
+	return nil
 }
