@@ -216,6 +216,15 @@ def do_work():
 
 ❌ Only manual instrumentation.
 
+## Rust
+
+❌ Only manual instrumentation.
+
+* https://opentelemetry.io/docs/instrumentation/rust
+* https://docs.rs/opentelemetry/latest/opentelemetry
+* https://github.com/open-telemetry/opentelemetry-rust/tree/main/examples
+* https://docs.rs/datadog-apm/latest/datadog_apm
+
 ## Appendix C: Paths Not Taken
 
 ### eBPF
