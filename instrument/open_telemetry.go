@@ -9,22 +9,28 @@ type OpenTelemetry struct {
 	TracerName  string
 	ContextName string
 	ErrorName   string
-	setError    bool
+
+	hasInserts bool
+	hasError   bool
 }
 
 func (s *OpenTelemetry) Imports() []string {
+	if !s.hasInserts {
+		return nil
+	}
 	pkg := []string{
 		"go.opentelemetry.io/otel",
 	}
-	if s.setError {
+	if s.hasError {
 		pkg = append(pkg, "go.opentelemetry.io/otel/codes")
 	}
 	return pkg
 }
 
 func (s *OpenTelemetry) PrefixStatements(spanName string, hasError bool) []ast.Stmt {
+	s.hasInserts = true
 	if hasError {
-		s.setError = hasError
+		s.hasError = hasError
 	}
 
 	stmts := []ast.Stmt{
