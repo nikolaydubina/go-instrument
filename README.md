@@ -66,7 +66,7 @@ func (s Cat) Walk(ctx context.Context) (err error) {
 
 Comments will be stripped. This fits well if your next step is to compile.
 
-### Future Development
+### In Development
 
 - [ ] Dynamic error variable name
 - [ ] Creating error when return is not named
