@@ -4,6 +4,12 @@ import (
 	"context"
 )
 
+type Cat struct{}
+
+func (s Cat) Name(ctx context.Context) (name string, err error) {
+	return "fluffer", nil
+}
+
 type Apple struct{}
 
 func (s *Apple) MethodWithPointerReciver(ctx context.Context, a int) (err error) {

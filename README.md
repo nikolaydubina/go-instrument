@@ -2,12 +2,51 @@
 
 > Automatically add Trace Spans to Go methods and functions
 
-* No new dependencies
-* OpenTelemetry (Datadog, NewRelic)
+* No dependencies
+* OpenTelemetry (Datadog, NewRelic, etc.)
+* 300 LOC
 
-To be instrumented function or method has to:
-1. accept `ctx context.Context`
-2. (optional) return `err error`, in which case this error will be used to mark Span as error status
+```bash
+go install github.com/nikolaydubina/go-instrument@latest
+```
+
+```bash
+find . -name "*.go" | grep -v "_test.go" | xargs -P 8 -I{} go-instrument -app my-service -w -filename {}
+```
+
+Functions and methods that have `ctx context.Context` in arguments
+```go
+func (s Cat) Name(ctx context.Context) (name string, err error) {
+  ...
+```
+
+... will be instrumented like this
+```go
+func (s Cat) Name(ctx context.Context) (name string, err error) {
+	ctx, span := otel.Trace("my-service").Start(ctx, "Cat.Name")
+	defer span.End()
+	defer func() {
+		if err != nil {
+			span.SetStatus(codes.Error, "error")
+			span.RecordError(err)
+		}
+	}()
+  ...
+```
+
+## Options
+
+### Skip
+
+TODO:
+
+### Errors
+
+Functions that have named return `err error` will get spans with appropriate status and error recorded.
+
+### Comments
+
+Comments will be stripped. This fits well if your next step is to compile.
 
 ## Motivation
 
@@ -27,6 +66,8 @@ Thus, providing automated version to add Trace Spans annotation.
 ### Inlining
 
 TODO
+
+----
 
 ## Appendix A: Related Work
 
