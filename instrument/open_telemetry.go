@@ -53,7 +53,7 @@ func (s *OpenTelemetry) expFuncSet(tracerName, spanName string) ast.Expr {
 	return &ast.CallExpr{
 		Fun: &ast.SelectorExpr{
 			X: &ast.CallExpr{
-				Fun:  &ast.SelectorExpr{X: &ast.Ident{Name: "otel"}, Sel: &ast.Ident{Name: "Trace"}},
+				Fun:  &ast.SelectorExpr{X: &ast.Ident{Name: "otel"}, Sel: &ast.Ident{Name: "Tracer"}},
 				Args: []ast.Expr{&ast.BasicLit{Kind: token.STRING, Value: `"` + tracerName + `"`}},
 			},
 			Sel: &ast.Ident{Name: "Start"},
