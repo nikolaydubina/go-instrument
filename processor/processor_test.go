@@ -15,7 +15,7 @@ import (
 func TestProcessor(t *testing.T) {
 	app := "app"
 	fileName := "../internal/example/basic.go"
-	fileNameExp := "../internal/example/instrumented/basic.go.out"
+	fileNameExp := "../internal/example/instrumented/basic.go.exp"
 
 	var instrumenter processor.Instrumenter = &instrument.OpenTelemetry{
 		TracerName:  app,
