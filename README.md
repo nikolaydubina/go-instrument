@@ -216,7 +216,7 @@ def do_work():
 
 ❌ Only manual instrumentation.
 
-## Rust
+### Rust
 
 ❌ Only manual instrumentation.
 
