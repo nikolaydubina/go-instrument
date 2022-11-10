@@ -43,6 +43,12 @@ func ParseCommand(s string) (Command, error) {
 		switch {
 		case strings.HasPrefix(q, operationSkipIdentifier):
 			vs := strings.Split(q[len(operationSkipIdentifier):], operationSkipSeparator)
+			for _, v := range vs {
+				if len(v) == 0 {
+					return NoopCommand, errBadOperation
+				}
+			}
+			c.Skip = vs
 			if len(vs) == 0 {
 				return NoopCommand, errBadOperation
 			}

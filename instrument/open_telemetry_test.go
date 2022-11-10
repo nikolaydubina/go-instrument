@@ -1,0 +1,75 @@
+package instrument_test
+
+import (
+	"bytes"
+	_ "embed"
+	"go/printer"
+	"go/token"
+	"testing"
+
+	"github.com/nikolaydubina/go-instrument/instrument"
+)
+
+//go:embed testdata/open_telemetry_error.go
+var expOpenTelemetryError string
+
+//go:embed testdata/open_telemetry.go
+var expOpenTelemetry string
+
+func TestOpenTelemetry_Error(t *testing.T) {
+	p := instrument.OpenTelemetry{
+		TracerName:  "app",
+		ContextName: "ctx",
+		ErrorName:   "err",
+	}
+	c := p.PrefixStatements("myClass.MyFunction", true)
+
+	var out bytes.Buffer
+	printer.Fprint(&out, token.NewFileSet(), c)
+
+	if s := out.String(); s != expOpenTelemetryError {
+		t.Errorf("%s", s)
+	}
+
+	expImports := map[string]bool{
+		"go.opentelemetry.io/otel":       true,
+		"go.opentelemetry.io/otel/codes": true,
+	}
+	imports := p.Imports()
+	for _, q := range imports {
+		if !expImports[q] {
+			t.Errorf("wrong import")
+		}
+	}
+	if len(imports) != len(expImports) {
+		t.Error("wrong imports")
+	}
+}
+func TestOpenTelemetry(t *testing.T) {
+	p := instrument.OpenTelemetry{
+		TracerName:  "app",
+		ContextName: "ctx",
+		ErrorName:   "err",
+	}
+	c := p.PrefixStatements("myClass.MyFunction", false)
+
+	var out bytes.Buffer
+	printer.Fprint(&out, token.NewFileSet(), c)
+
+	if s := out.String(); s != expOpenTelemetry {
+		t.Errorf("%s", s)
+	}
+
+	expImports := map[string]bool{
+		"go.opentelemetry.io/otel": true,
+	}
+	imports := p.Imports()
+	for _, q := range imports {
+		if !expImports[q] {
+			t.Errorf("wrong import")
+		}
+	}
+	if len(imports) != len(expImports) {
+		t.Error("wrong imports")
+	}
+}
