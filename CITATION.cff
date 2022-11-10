@@ -1,0 +1,12 @@
+cff-version: 1.2.0
+message: If you reference this library in publication, please cite it as below.
+title: Automatic Go Instrumentation
+abstract: Automatic Go Instrumentation by modifying AST
+authors:
+- family-names: Dubina
+  given-names: Nikolay
+version: 2.1
+date-released: 2022-11-10
+license: MIT
+repository-code: https://github.com/nikolaydubina/go-instrument
+url: https://github.com/nikolaydubina/go-instrument
