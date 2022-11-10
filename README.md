@@ -87,11 +87,28 @@ As of `2022-11-06`, official Go does not support automatic function traces. http
 
 Thus, providing automated version to add Trace Spans annotation.
 
-## Performance
+## Performance 
 
-### Inlining
+### Go Compiler Inlining
 
-TODO
+Since we are adding multiple functions calls, it affects Go compiler decisions on inlining.
+It is expected that Go will less likely inline.
+
+For example, can inline function
+```bash
+$ go build -gcflags="-m -m" ./internal/example 2>&1 | grep OneLine
+internal/example/basic.go:80:6: can inline OneLineTypical with cost 62 as: func(context.Context, int) (int, error) { return fib(n), nil }
+```
+
+```bash
+go-instrument -w -filename internal/example/basic.go
+```
+
+Can not inline after instrumentation
+```bash
+$ go build -gcflags="-m -m" ./internal/example 2>&1 | grep OneLine
+internal/example/basic.go:132:6: cannot inline OneLineTypical: unhandled op DEFER
+``` 
 
 ----
 

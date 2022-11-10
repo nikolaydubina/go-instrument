@@ -77,7 +77,7 @@ func fib(n int) int {
 
 func OneLine(n int) int { return fib(n) }
 
-func OneLineTypical(ctx context.Context) error { return nil }
+func OneLineTypical(ctx context.Context, n int) (int, error) { return fib(n), nil }
 
 func OneLineWithComment() int { /* comment 1 */ return 42 /* comment 2 */ }
 
