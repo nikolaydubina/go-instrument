@@ -13,17 +13,18 @@ type Instrumenter interface {
 	PrefixStatements(spanName string, hasError bool) []ast.Stmt
 }
 
-func BasicSpanName(receiver, method string) string {
+// BasicSpanName is common notation of <class>.<method> or <pkg>.<func>
+func BasicSpanName(receiver, function string) string {
 	if receiver == "" {
-		return method
+		return function
 	}
-	return receiver + "." + method
+	return receiver + "." + function
 }
 
-// Processor traverses AST, collects details on funtions and methods, and invokes Instrumenter.
+// Processor traverses AST, collects details on funtions and methods, and invokes Instrumenter
 type Processor struct {
 	Instrumenter   Instrumenter
-	SpanName       func(receiver, method string) string
+	SpanName       func(receiver, function string) string
 	ContextName    string
 	ContextPackage string
 	ContextType    string
