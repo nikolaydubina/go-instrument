@@ -13,7 +13,7 @@ go install github.com/nikolaydubina/go-instrument@latest
 ```
 
 ```bash
-find . -name "*.go" | grep -v "_test.go" | xargs -P 8 -I{} go-instrument -app my-service -w -filename {}
+find . -name "*.go" | xargs -I{} go-instrument -app my-service -w -filename {}
 ```
 
 Functions and methods with `ctx context.Context` in arguments
