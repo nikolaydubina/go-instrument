@@ -1,10 +1,12 @@
-# go-instrument
+# ⚡️ go-instrument
 
 > Automatically add Trace Spans to Go methods and functions
 
+This tool uses standard Go library to modify AST with instrumentation. Use this in your CI before compilation. It is also possible to track generated code, however comments will be missing. You can add instrumentation by defining your own `Instrumenter` and invoking `Processor` like it is done in `main`.
+
 * No dependencies
-* OpenTelemetry (Datadog, NewRelic, etc.)
 * 300 LOC
+* OpenTelemetry (Datadog, NewRelic, etc.)
 
 ```bash
 go install github.com/nikolaydubina/go-instrument@latest
@@ -14,13 +16,13 @@ go install github.com/nikolaydubina/go-instrument@latest
 find . -name "*.go" | grep -v "_test.go" | xargs -P 8 -I{} go-instrument -app my-service -w -filename {}
 ```
 
-Functions and methods that have `ctx context.Context` in arguments
+Functions and methods with `ctx context.Context` in arguments
 ```go
 func (s Cat) Name(ctx context.Context) (name string, err error) {
   ...
 ```
 
-... will be instrumented like this
+will be instrumented with span
 ```go
 func (s Cat) Name(ctx context.Context) (name string, err error) {
 	ctx, span := otel.Trace("my-service").Start(ctx, "Cat.Name")
@@ -34,19 +36,39 @@ func (s Cat) Name(ctx context.Context) (name string, err error) {
   ...
 ```
 
-## Options
+Example HTTP server [go-instrument-example](https://github.com/nikolaydubina/go-instrument-example) as it appears in Datadog.
+![](./docs/fib-error.png)
+
+## Features
 
 ### Skip
 
-TODO:
+To avoid instrumentation of function add comment to function body at the top.
+```go
+func (s Cat) Name(ctx context.Context) (name string, err error) {
+  //go:instrument skip
+```
 
 ### Errors
 
 Functions that have named return `err error` will get spans with appropriate status and error recorded.
 
+```go
+func (s Cat) Walk(ctx context.Context) (err error) {
+  ...
+```
+
 ### Comments
 
 Comments will be stripped. This fits well if your next step is to compile.
+
+### Future Development
+
+- [ ] Dynamic error variable name
+- [ ] Creating error when return is not named
+- [ ] Detection if function is already instrumented
+- [ ] Keep comments
+- [ ] Datadog native instrumenter
 
 ## Motivation
 
