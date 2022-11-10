@@ -237,3 +237,13 @@ Thus, it is doubtful how much benefit would be from tracing only exported functi
 
 This would lead to circular dependency failure, since some even exported functions in original package may be called withing same package.
 Thus, we would either skip those calls, or fail with circular dependency while trying to wrap those.
+
+## Appendix D: Generating Many Spans
+
+`1.97K` spans, fibbonaci
+
+![](./docs/large_fib.png)
+
+`3.7K` spans, go cover treemap
+
+![](./docs/large_tree.png)
