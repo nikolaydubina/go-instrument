@@ -1,4 +1,4 @@
-# ⚡️ go-instrument
+# 🎑 go-instrument
 
 > Automatically add Trace Spans to Go methods and functions
 
