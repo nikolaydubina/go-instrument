@@ -75,9 +75,9 @@ Comments will be stripped. This fits well if your next step is to compile.
 - [ ] Dynamic error variable name
 - [ ] Creating error when return is not named
 - [ ] Detection if function is already instrumented
-- [ ] Keep comments
-- [ ] Datadog native instrumenter
 - [ ] Assigning `ctx` to `_` when `ctx` is not used in function (`unused assignement` linter checks issue)
+- [ ] Datadog native instrumenter
+- [ ] Keep comments (unsurmountable task without 3rd partty lib support. Go core has PR in progress to improve it in Go core. wait until that is merged) 
 
 ## Motivation
 
