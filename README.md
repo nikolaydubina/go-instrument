@@ -77,6 +77,7 @@ Comments will be stripped. This fits well if your next step is to compile.
 - [ ] Detection if function is already instrumented
 - [ ] Keep comments
 - [ ] Datadog native instrumenter
+- [ ] Assigning `ctx` to `_` when `ctx` is not used in function (`unused assignement` linter checks issue)
 
 ## Motivation
 
