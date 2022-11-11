@@ -5,6 +5,7 @@
 [![codecov](https://codecov.io/gh/nikolaydubina/go-instrument/branch/master/graph/badge.svg?token=pXGPrKmAbT)](https://codecov.io/gh/nikolaydubina/go-instrument)
 [![Go Report Card](https://goreportcard.com/badge/github.com/nikolaydubina/go-instrument)](https://goreportcard.com/report/github.com/nikolaydubina/go-instrument)
 [![Go Reference](https://pkg.go.dev/badge/github.com/nikolaydubina/go-instrument.svg)](https://pkg.go.dev/github.com/nikolaydubina/go-instrument)
+[![Mentioned in Awesome Go](https://awesome.re/mentioned-badge.svg)](https://github.com/avelino/awesome-go#performance)
 
 This tool uses standard Go library to modify AST with instrumentation. Use this in your CI before compilation. It is also possible to track generated code, however comments will be missing. You can add new instrumentations by defining your own `Instrumenter` and invoking `Processor` like it is done in `main`.
 
