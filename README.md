@@ -219,8 +219,19 @@ def do_work():
 
 ### Rust
 
-❌ Only manual instrumentation.
+✅ Very short single line decorator statement can be used to trace selected functions with well-establisehd tokio framework.
 
+```rust
+#[tracing::instrument]
+pub fn shave(yak: usize) -> Result<(), Box<dyn Error + 'static>> {
+```
+
+```rust
+#[instrument]
+async fn write(stream: &mut TcpStream) -> io::Result<usize> {
+```
+
+* https://github.com/tokio-rs/tracing
 * https://opentelemetry.io/docs/instrumentation/rust
 * https://docs.rs/opentelemetry/latest/opentelemetry
 * https://github.com/open-telemetry/opentelemetry-rust/tree/main/examples
