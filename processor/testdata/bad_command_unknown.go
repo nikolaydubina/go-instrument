@@ -4,6 +4,6 @@ import (
 	"context"
 )
 
-//go:instrument asdf
+//instrument: asdf
 
 func Skip(ctx context.Context) {}

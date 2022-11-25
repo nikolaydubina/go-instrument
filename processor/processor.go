@@ -13,6 +13,11 @@ type Instrumenter interface {
 	PrefixStatements(spanName string, hasError bool) []ast.Stmt
 }
 
+// FunctionSelector tells if function has to be instrumented.
+type FunctionSelector interface {
+	AcceptFunction(functionName string) bool
+}
+
 // BasicSpanName is common notation of <class>.<method> or <pkg>.<func>
 func BasicSpanName(receiver, function string) string {
 	if receiver == "" {
@@ -23,27 +28,14 @@ func BasicSpanName(receiver, function string) string {
 
 // Processor traverses AST, collects details on funtions and methods, and invokes Instrumenter
 type Processor struct {
-	Instrumenter   Instrumenter
-	SpanName       func(receiver, function string) string
-	ContextName    string
-	ContextPackage string
-	ContextType    string
-	ErrorName      string
-	ErrorType      string
-
-	skipFunctions map[string]bool
-}
-
-func (p *Processor) ApplyCommand(command ...Command) {
-	if p.skipFunctions == nil {
-		p.skipFunctions = map[string]bool{}
-	}
-
-	for _, q := range command {
-		for _, s := range q.Skip {
-			p.skipFunctions[s] = true
-		}
-	}
+	Instrumenter     Instrumenter
+	FunctionSelector FunctionSelector
+	SpanName         func(receiver, function string) string
+	ContextName      string
+	ContextPackage   string
+	ContextType      string
+	ErrorName        string
+	ErrorType        string
 }
 
 func (p *Processor) methodReceiverTypeName(spec ast.FuncDecl) string {
@@ -132,7 +124,7 @@ func (p *Processor) Process(fset *token.FileSet, file ast.File) error {
 		}
 
 		fname := p.functionName(*fn)
-		if p.skipFunctions[fname] {
+		if !p.FunctionSelector.AcceptFunction(fname) {
 			return true
 		}
 

@@ -7,56 +7,37 @@ import (
 )
 
 const (
+	commandPrefix            = `//instrument:`
 	commandIncludeIdentifier = `//instrument:include`
 	commandExcludeIdentifier = `//instrument:exclude`
 )
 
 // Command to change behavior of Processor or Instrumentor
 type Command struct {
-	Skip []string // list of functions to skip
+	acceptFunctions map[string]bool
 }
-
-var (
-	// NoopCommand does not perform any action
-	NoopCommand Command
-
-	errEmptyCommand     = errors.New("empty command")
-	errUnknownOperation = errors.New("unknown operation")
-	errBadOperation     = errors.New("bad operation")
-)
 
 // ParseCommand from string representation
 func ParseCommand(s string) (Command, error) {
-	if !strings.HasPrefix(s, commandIdentifier) {
-		return NoopCommand, nil
+	command := Command{acceptFunctions: map[string]bool{}}
+
+	if !strings.HasPrefix(s, commandPrefix) {
+		return command, nil
 	}
 
-	parts := strings.Fields(s[len(commandIdentifier):])
-	if len(parts) == 0 {
-		return NoopCommand, errEmptyCommand
-	}
-
-	var c Command
-	for _, q := range parts {
-		switch {
-		case strings.HasPrefix(q, operationSkipIdentifier):
-			vs := strings.Split(q[len(operationSkipIdentifier):], operationSkipSeparator)
-			for _, v := range vs {
-				if len(v) == 0 {
-					return NoopCommand, errBadOperation
-				}
-			}
-			c.Skip = vs
-			if len(vs) == 0 {
-				return NoopCommand, errBadOperation
-			}
-			c.Skip = vs
-		default:
-			return NoopCommand, errUnknownOperation
+	switch {
+	case strings.HasPrefix(s, commandIncludeIdentifier):
+		for _, v := range strings.Split(strings.TrimSpace(s[len(commandIncludeIdentifier):]), "|") {
+			command.acceptFunctions[v] = true
 		}
+	case strings.HasPrefix(s, commandExcludeIdentifier):
+		for _, v := range strings.Split(strings.TrimSpace(s[len(commandExcludeIdentifier):]), "|") {
+			command.acceptFunctions[v] = false
+		}
+	default:
+		return command, errors.New("unkown command")
 	}
-
-	return c, nil
+	return command, nil
 }
 
 // CommandsFromFile that has been parsed by `go/parse` with comments
@@ -82,4 +63,24 @@ func CommandsFromFile(file ast.File) ([]Command, error) {
 	}
 
 	return commands, nil
+}
+
+// NewMapFunctionSelectorFromCommands performs join of function names stored in maps of commands.
+func NewMapFunctionSelectorFromCommands(defaultSelect bool, commands []Command) MapFunctionSelector {
+	f := MapFunctionSelector{
+		AcceptFunctions: make(map[string]bool, len(commands)),
+		Default:         defaultSelect,
+	}
+
+	for _, q := range commands {
+		for fname, accept := range q.acceptFunctions {
+			if v, ok := f.AcceptFunctions[fname]; ok {
+				f.AcceptFunctions[fname] = v && accept
+			} else {
+				f.AcceptFunctions[fname] = accept
+			}
+		}
+	}
+
+	return f
 }
