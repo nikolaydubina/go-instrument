@@ -7,10 +7,8 @@ import (
 )
 
 const (
-	commandIdentifier = `//go:instrument`
-
-	operationSkipIdentifier = `-skip=`
-	operationSkipSeparator  = `|`
+	commandIncludeIdentifier = `//instrument:include`
+	commandExcludeIdentifier = `//instrument:exclude`
 )
 
 // Command to change behavior of Processor or Instrumentor
