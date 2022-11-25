@@ -15,32 +15,19 @@ import (
 
 func main() {
 	var (
-		fileName  string
-		overwrite bool
-		app       string
+		fileName      string
+		overwrite     bool
+		app           string
+		defaultSelect bool
 	)
 	flag.StringVar(&fileName, "filename", "", "go file to instrument")
 	flag.StringVar(&app, "app", "app", "name of application")
 	flag.BoolVar(&overwrite, "w", false, "overwrite original file")
+	flag.BoolVar(&defaultSelect, "all", true, "instrument all by default")
 	flag.Parse()
 
 	if fileName == "" {
 		log.Fatalln("missing arg: file name")
-	}
-
-	var instrumenter processor.Instrumenter = &instrument.OpenTelemetry{
-		TracerName:  app,
-		ContextName: "ctx",
-		ErrorName:   "err",
-	}
-	p := processor.Processor{
-		Instrumenter:   instrumenter,
-		SpanName:       processor.BasicSpanName,
-		ContextName:    "ctx",
-		ContextPackage: "context",
-		ContextType:    "Context",
-		ErrorName:      "err",
-		ErrorType:      `error`,
 	}
 
 	fset := token.NewFileSet()
@@ -54,7 +41,23 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	p.ApplyCommand(commands...)
+	functionSelector := processor.NewMapFunctionSelectorFromCommands(defaultSelect, commands)
+
+	var instrumenter processor.Instrumenter = &instrument.OpenTelemetry{
+		TracerName:  app,
+		ContextName: "ctx",
+		ErrorName:   "err",
+	}
+	p := processor.Processor{
+		Instrumenter:     instrumenter,
+		FunctionSelector: functionSelector,
+		SpanName:         processor.BasicSpanName,
+		ContextName:      "ctx",
+		ContextPackage:   "context",
+		ContextType:      "Context",
+		ErrorName:        "err",
+		ErrorType:        `error`,
+	}
 
 	// process without comments
 	file, err := parser.ParseFile(fset, fileName, nil, 0)

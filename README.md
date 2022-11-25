@@ -47,16 +47,26 @@ Example HTTP server [go-instrument-example](https://github.com/nikolaydubina/go-
 
 ## Features
 
-### Skip
+### Excluding and Including
 
-To avoid instrumentation of function add comment anywhere in the file.
+To avoid instrumentation of function add comment directive anywhere in the file.
 
 ```go
-//go:instrument -skip=SomeFunc|SomeOtherfunc|privateFunc
+//instrument:exclude SomeFunc|SomeOtherfunc|privateFunc
 ...
 
 func (s Cat) Name(ctx context.Context) (name string, err error) {
-  //go:instrument -skip=Name
+  //instrument:exclude Name
+```
+
+To instrument only specific functions add comment directive anywhere in the file and pass `-all=false` in CLI.
+
+```go
+//instrument:include SomeFunc|SomeOtherfunc|privateFunc
+...
+
+func (s Cat) Name(ctx context.Context) (name string, err error) {
+  //instrument:include Name
 ```
 
 ### Errors
@@ -272,3 +282,29 @@ Thus, we would either skip those calls, or fail with circular dependency while t
 `3.7K` spans, go cover treemap
 
 ![](./docs/large_tree.png)
+
+## Appendix E: Directives
+
+Orignal version was using `go:instrument` directive.
+However, many members of Go community raised concern that it takes over reserved core Go toolchain directives (eg, `//go:norace`).
+Even though as of `2022-11-25` Go core does not use `go:instrument`, to respect community and Go core, leaving using `//instrument:` directive instead.
+
+## Appendix E: Selectors
+
+One of proposed solutions for selectors was to use regex.
+
+Specifically, first usecase proposed was to use
+
+```
+//instrument:exclude .*
+//instrument:include ^API.*$
+```
+
+The issue with this is collision of two functions:
+* A) exlude all and select specific
+* B) include all and exclude specific
+
+Similarly, there is collision of subspace of functions for exclusion and inclusion.
+
+As of `2022-11-25`, @nikolaydubina does not know how to resolve this better.
+Thus, keeping simple map matching wiht `and` condition of overlaps.

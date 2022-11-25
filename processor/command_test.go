@@ -11,16 +11,13 @@ import (
 
 func TestParseCommand_Error(t *testing.T) {
 	tests := []string{
-		"//go:instrument",
-		"//go:instrument asdf",
-		"//go:instrument -skip=",
+		"//instrument:",
+		"//instrument: asdf",
+		"//instrument:asdf",
 	}
 	for i, tc := range tests {
 		t.Run(fmt.Sprintf("%d", i), func(t *testing.T) {
-			c, err := processor.ParseCommand(tc)
-			if len(c.Skip) != 0 {
-				t.Errorf("got(%#v) != exp(%#v)", c, processor.NoopCommand)
-			}
+			_, err := processor.ParseCommand(tc)
 			if err == nil {
 				t.Error("error expected")
 			}
