@@ -82,6 +82,16 @@ func (s Cat) Walk(ctx context.Context) (err error) {
 
 Comments will be stripped. This fits well if your next step is to compile.
 
+### Go compiler directives
+
+Standard Go compiler directives are recognized.
+More details `go help buildconstraint` and https://pkg.go.dev/cmd/go#hdr-Build_constraints.
+
+* `//go:build exclude`
+* `// +build exclude`
+* `//go:build ignore`
+* `// +build ignore`
+
 ### In Development
 
 - [ ] Dynamic error variable name

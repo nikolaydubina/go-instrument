@@ -37,6 +37,14 @@ func main() {
 	if err != nil || fileWithComments == nil {
 		log.Fatalf("can not parse input file: %s", err)
 	}
+
+	directives := processor.GoBuildDirectivesFromFile(*fileWithComments)
+	for _, q := range directives {
+		if q.SkipFile() {
+			return
+		}
+	}
+
 	commands, err := processor.CommandsFromFile(*fileWithComments)
 	if err != nil {
 		log.Fatal(err)
