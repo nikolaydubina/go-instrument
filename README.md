@@ -289,7 +289,7 @@ Orignal version was using `go:instrument` directive.
 However, many members of Go community raised concern that it takes over reserved core Go toolchain directives (eg, `//go:norace`).
 Even though as of `2022-11-25` Go core does not use `go:instrument`, to respect community and Go core, leaving using `//instrument:` directive instead.
 
-## Appendix E: Selectors
+## Appendix F: Selectors
 
 One of proposed solutions for selectors was to use regex.
 
