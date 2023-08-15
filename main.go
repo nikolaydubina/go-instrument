@@ -2,6 +2,7 @@ package main
 
 import (
 	"flag"
+	"go/ast"
 	"go/parser"
 	"go/printer"
 	"go/token"
@@ -19,11 +20,13 @@ func main() {
 		overwrite     bool
 		app           string
 		defaultSelect bool
+		skipGenerated bool
 	)
 	flag.StringVar(&fileName, "filename", "", "go file to instrument")
 	flag.StringVar(&app, "app", "app", "name of application")
 	flag.BoolVar(&overwrite, "w", false, "overwrite original file")
 	flag.BoolVar(&defaultSelect, "all", true, "instrument all by default")
+	flag.BoolVar(&skipGenerated, "skip-generated", false, "skip generated files")
 	flag.Parse()
 
 	if fileName == "" {
@@ -36,6 +39,9 @@ func main() {
 	fileWithComments, err := parser.ParseFile(fset, fileName, nil, parser.ParseComments)
 	if err != nil || fileWithComments == nil {
 		log.Fatalf("can not parse input file: %s", err)
+	}
+	if skipGenerated && ast.IsGenerated(fileWithComments) {
+		log.Fatalf("skipping generated file")
 	}
 
 	directives := processor.GoBuildDirectivesFromFile(*fileWithComments)
