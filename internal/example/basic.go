@@ -4,6 +4,18 @@ import (
 	"context"
 )
 
+func AnonymousFuncWithoutContext() func() (name string, err error) {
+	return func() (name string, err error) {
+		return "fluffer", nil
+	}
+}
+
+func AnonymousFunc() func(ctx context.Context) (name string, err error) {
+	return func(ctx context.Context) (name string, err error) {
+		return "fluffer", nil
+	}
+}
+
 type Cat struct{}
 
 func (s Cat) Name(ctx context.Context) (name string, err error) {

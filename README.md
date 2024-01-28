@@ -22,6 +22,11 @@ go install github.com/nikolaydubina/go-instrument@latest
 find . -name "*.go" | xargs -I{} go-instrument -app my-service -w -filename {}
 ```
 
+Exclude the `vendor` directory and files with `_test.go` and `mock` in the name
+```bash
+find . -type d \( -path ./vendor -o -path "*mock*" -o -path "*pact*" \) -prune -o -type f \( -name "*_test.go" -o -name "*mock*" \) -prune -o -name "*.go" -print | xargs -I{} go-instrument -app my-service -w -filename {}
+```
+
 Functions and methods with `ctx context.Context` in arguments
 ```go
 func (s Cat) Name(ctx context.Context) (name string, err error) {
