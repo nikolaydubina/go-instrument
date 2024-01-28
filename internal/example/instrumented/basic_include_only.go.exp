@@ -6,6 +6,8 @@ import (
 	"go.opentelemetry.io/otel/codes"
 )
 
+//instrument:include Bark
+
 type Dog struct{}
 
 func (s Dog) Bark(ctx context.Context) (name string, err error) {
@@ -17,6 +19,7 @@ func (s Dog) Bark(ctx context.Context) (name string, err error) {
 			span.RecordError(err)
 		}
 	}()
+
 	return "spot", nil
 }
 

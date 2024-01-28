@@ -3,12 +3,13 @@ package main
 import (
 	"flag"
 	"go/ast"
+	"go/format"
 	"go/parser"
-	"go/printer"
 	"go/token"
 	"io"
 	"log"
 	"os"
+	"slices"
 
 	"github.com/nikolaydubina/go-instrument/instrument"
 	"github.com/nikolaydubina/go-instrument/processor"
@@ -21,37 +22,53 @@ func main() {
 		app           string
 		defaultSelect bool
 		skipGenerated bool
+		gofmt         bool
 	)
 	flag.StringVar(&fileName, "filename", "", "go file to instrument")
 	flag.StringVar(&app, "app", "app", "name of application")
 	flag.BoolVar(&overwrite, "w", false, "overwrite original file")
 	flag.BoolVar(&defaultSelect, "all", true, "instrument all by default")
 	flag.BoolVar(&skipGenerated, "skip-generated", false, "skip generated files")
+	flag.BoolVar(&gofmt, "gofmt", false, "format file (gofmt)")
 	flag.Parse()
 
 	if fileName == "" {
 		log.Fatalln("missing arg: file name")
 	}
 
+	src, err := os.ReadFile(fileName)
+	if err != nil {
+		log.Fatalf("can not read input file: %s", err)
+	}
+
+	formattedSrc, err := format.Source(src)
+	if err != nil {
+		log.Fatalf("can not format input file: %s", err)
+	}
+
+	if !gofmt && !slices.Equal(src, formattedSrc) {
+		log.Fatalf("file is not `gofmt`-ed")
+	}
+
 	fset := token.NewFileSet()
 
-	// extract all commands from file comments
-	fileWithComments, err := parser.ParseFile(fset, fileName, nil, parser.ParseComments)
-	if err != nil || fileWithComments == nil {
+	file, err := parser.ParseFile(fset, fileName, formattedSrc, parser.ParseComments)
+	if err != nil || file == nil {
 		log.Fatalf("can not parse input file: %s", err)
 	}
-	if skipGenerated && ast.IsGenerated(fileWithComments) {
+	if skipGenerated && ast.IsGenerated(file) {
 		log.Fatalf("skipping generated file")
 	}
 
-	directives := processor.GoBuildDirectivesFromFile(*fileWithComments)
+	directives := processor.GoBuildDirectivesFromFile(*file)
 	for _, q := range directives {
 		if q.SkipFile() {
 			return
 		}
 	}
 
-	commands, err := processor.CommandsFromFile(*fileWithComments)
+	// extract all commands from file comments
+	commands, err := processor.CommandsFromFile(*file)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -73,24 +90,22 @@ func main() {
 		ErrorType:        `error`,
 	}
 
-	// process without comments
-	file, err := parser.ParseFile(fset, fileName, nil, 0)
-	if err != nil || file == nil {
-		log.Fatalf("can not parse input file: %s", err)
-	}
-	if err := p.Process(fset, *file); err != nil {
+	if err := p.Process(fset, file); err != nil {
 		log.Fatal(err)
 	}
 
 	// output
 	var out io.Writer = os.Stdout
 	if overwrite {
-		out, err = os.OpenFile(fileName, os.O_RDWR|os.O_TRUNC, 0)
+		outf, err := os.OpenFile(fileName, os.O_RDWR|os.O_TRUNC, 0)
 		if err != nil {
 			log.Fatal(err)
 		}
+		defer outf.Close()
+		out = outf
 	}
-	if err := printer.Fprint(out, fset, file); err != nil {
+
+	if err := format.Node(out, fset, file); err != nil {
 		log.Fatal(err)
 	}
 }
