@@ -113,7 +113,7 @@ func (p *Processor) isError(e ast.Field) bool {
 }
 
 func (p *Processor) Process(fset *token.FileSet, file *ast.File) error {
-	patches := make([]patch, 0)
+	var patches []patch
 
 	astutil.Apply(file, nil, func(c *astutil.Cursor) bool {
 		if c == nil {
@@ -160,7 +160,7 @@ func (p *Processor) Process(fset *token.FileSet, file *ast.File) error {
 		}
 
 		ps := p.Instrumenter.PrefixStatements(spanName, hasError)
-		patches = append(patches, patch{pos: int(fn.Body.Pos()), stmts: ps})
+		patches = append(patches, patch{pos: fn.Body.Pos(), stmts: ps})
 
 		return true
 	})

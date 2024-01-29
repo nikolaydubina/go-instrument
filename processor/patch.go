@@ -9,12 +9,12 @@ import (
 )
 
 type patch struct {
-	pos   int
+	pos   token.Pos
 	stmts []ast.Stmt
 }
 
 func (p *Processor) patchFile(fset *token.FileSet, file *ast.File, patches ...patch) error {
-	src, err := formatNode(fset, file)
+	src, err := formatNodeToBytes(fset, file)
 	if err != nil {
 		return err
 	}
@@ -31,17 +31,15 @@ func (p *Processor) patchFile(fset *token.FileSet, file *ast.File, patches ...pa
 		}
 		buf.WriteString("\n")
 
-		pos := patch.pos + offset
+		pos := int(patch.pos) + offset
 		src = append(src[:pos], append(buf.Bytes(), src[pos:]...)...)
 		offset += buf.Len()
 	}
 
-	p.updateFile(fset, file, src)
-
-	return nil
+	return p.updateFile(fset, file, src)
 }
 
-func formatNode(fset *token.FileSet, node any) ([]byte, error) {
+func formatNodeToBytes(fset *token.FileSet, node any) ([]byte, error) {
 	var buf bytes.Buffer
 	if err := format.Node(&buf, fset, node); err != nil {
 		return nil, err
@@ -54,7 +52,7 @@ func (p *Processor) updateFile(fset *token.FileSet, file *ast.File, newSrc []byt
 	var err error
 
 	if newSrc == nil {
-		newSrc, err = formatNode(fset, file)
+		newSrc, err = formatNodeToBytes(fset, file)
 	}
 
 	fname := fset.Position(file.Pos()).Filename

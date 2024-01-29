@@ -9,7 +9,6 @@ import (
 	"io"
 	"log"
 	"os"
-	"slices"
 
 	"github.com/nikolaydubina/go-instrument/instrument"
 	"github.com/nikolaydubina/go-instrument/processor"
@@ -22,14 +21,12 @@ func main() {
 		app           string
 		defaultSelect bool
 		skipGenerated bool
-		gofmt         bool
 	)
 	flag.StringVar(&fileName, "filename", "", "go file to instrument")
 	flag.StringVar(&app, "app", "app", "name of application")
 	flag.BoolVar(&overwrite, "w", false, "overwrite original file")
 	flag.BoolVar(&defaultSelect, "all", true, "instrument all by default")
 	flag.BoolVar(&skipGenerated, "skip-generated", false, "skip generated files")
-	flag.BoolVar(&gofmt, "gofmt", false, "format file (gofmt)")
 	flag.Parse()
 
 	if fileName == "" {
@@ -44,10 +41,6 @@ func main() {
 	formattedSrc, err := format.Source(src)
 	if err != nil {
 		log.Fatalf("can not format input file: %s", err)
-	}
-
-	if !gofmt && !slices.Equal(src, formattedSrc) {
-		log.Fatalf("file is not `gofmt`-ed")
 	}
 
 	fset := token.NewFileSet()
