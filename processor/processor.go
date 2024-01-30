@@ -112,8 +112,10 @@ func (p *Processor) isError(e ast.Field) bool {
 	return false
 }
 
-func (p *Processor) Process(fset *token.FileSet, file ast.File) error {
-	astutil.Apply(&file, nil, func(c *astutil.Cursor) bool {
+func (p *Processor) Process(fset *token.FileSet, file *ast.File) error {
+	var patches []patch
+
+	astutil.Apply(file, nil, func(c *astutil.Cursor) bool {
 		if c == nil {
 			return true
 		}
@@ -157,15 +159,20 @@ func (p *Processor) Process(fset *token.FileSet, file ast.File) error {
 			return true
 		}
 
-		fn.Body.List = append(p.Instrumenter.PrefixStatements(spanName, hasError), fn.Body.List...)
-
-		c.Replace(fn)
+		ps := p.Instrumenter.PrefixStatements(spanName, hasError)
+		patches = append(patches, patch{pos: fn.Body.Pos(), stmts: ps})
 
 		return true
 	})
 
-	for _, q := range p.Instrumenter.Imports() {
-		astutil.AddImport(fset, &file, q)
+	if len(patches) > 0 {
+		if err := p.patchFile(fset, file, patches...); err != nil {
+			return err
+		}
+
+		for _, q := range p.Instrumenter.Imports() {
+			astutil.AddImport(fset, file, q)
+		}
 	}
 
 	return nil

@@ -2,8 +2,8 @@ package processor_test
 
 import (
 	"bytes"
+	"go/format"
 	"go/parser"
-	"go/printer"
 	"go/token"
 	"os"
 	"testing"
@@ -35,14 +35,25 @@ func TestProcessor(t *testing.T) {
 
 	for _, tc := range tests {
 		t.Run(tc.fileName, func(t *testing.T) {
+			src, err := os.ReadFile(tc.fileName)
+			if err != nil {
+				t.Errorf("can not read input file: %s", err)
+			}
+
+			src, err = format.Source(src)
+			if err != nil {
+				t.Errorf("can not format input file: %s", err)
+			}
+
 			fset := token.NewFileSet()
 
-			// extract all commands from file comments
-			fileWithComments, err := parser.ParseFile(fset, tc.fileName, nil, parser.ParseComments)
-			if err != nil || fileWithComments == nil {
+			file, err := parser.ParseFile(fset, tc.fileName, src, parser.ParseComments)
+			if err != nil || file == nil {
 				t.Errorf("can not parse input file: %s", err)
 			}
-			commands, err := processor.CommandsFromFile(*fileWithComments)
+
+			// extract all commands from file comments
+			commands, err := processor.CommandsFromFile(*file)
 			if err != nil {
 				t.Error(err)
 			}
@@ -64,18 +75,13 @@ func TestProcessor(t *testing.T) {
 				ErrorType:        `error`,
 			}
 
-			// process without comments
-			file, err := parser.ParseFile(fset, tc.fileName, nil, 0)
-			if err != nil || file == nil {
-				t.Errorf("can not parse input file: %s", err)
-			}
-			if err := p.Process(fset, *file); err != nil {
+			if err := p.Process(fset, file); err != nil {
 				t.Error(err)
 			}
 
 			// output
 			var out bytes.Buffer
-			if err := printer.Fprint(&out, fset, file); err != nil {
+			if err := format.Node(&out, fset, file); err != nil {
 				t.Error(err)
 			}
 
