@@ -8,10 +8,10 @@
 [![Mentioned in Awesome Go](https://awesome.re/mentioned-badge.svg)](https://github.com/avelino/awesome-go#performance)
 [![go-recipes](https://raw.githubusercontent.com/nikolaydubina/go-recipes/main/badge.svg?raw=true)](https://github.com/nikolaydubina/go-recipes)
 
-This tool uses standard Go library to modify AST with instrumentation. Use this in your CI before compilation. It is also possible to track generated code, however comments will be missing. You can add new instrumentations by defining your own `Instrumenter` and invoking `Processor` like it is done in `main`.
+This tool uses standard Go library to modify AST with instrumentation. You can add new instrumentations by defining your own `Instrumenter` and invoking `Processor` like it is done in `main`.
 
 * No dependencies
-* 400 LOC
+* 500 LOC
 * OpenTelemetry (Datadog, NewRelic, etc.)
 
 ```bash
@@ -80,7 +80,7 @@ func (s Cat) Walk(ctx context.Context) (err error) {
 
 ### Comments
 
-Comments will be stripped. This fits well if your next step is to compile.
+Comments are supported through patching source files bytes and fmt.
 
 ### Go compiler directives
 
@@ -101,7 +101,7 @@ More details `go help buildconstraint` and https://pkg.go.dev/cmd/go#hdr-Build_c
 - [ ] Span Tags returns
 - [ ] Assigning `ctx` to `_` when `ctx` is not used in function (`unused assignement` linter checks issue)
 - [ ] Datadog native instrumenter
-- [ ] Keep comments (unsurmountable task without 3rd partty lib support. Go core has PR in progress to improve it in Go core. wait until that is merged) 
+- [ ] Anonymous function
 
 ## Motivation
 
