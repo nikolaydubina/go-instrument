@@ -21,7 +21,7 @@ func (p *Processor) patchFile(fset *token.FileSet, file *ast.File, patches ...pa
 
 	var buf bytes.Buffer
 
-	offset := -int(file.FileStart) + 1
+	offset := int(file.FileStart) - 1
 	for _, patch := range patches {
 		buf.Reset()
 
@@ -31,9 +31,10 @@ func (p *Processor) patchFile(fset *token.FileSet, file *ast.File, patches ...pa
 		}
 		buf.WriteString("\n")
 
-		pos := int(patch.pos) + offset
+		pos := int(patch.pos) - offset
 		src = append(src[:pos], append(buf.Bytes(), src[pos:]...)...)
-		offset += buf.Len()
+		// patch positions after need to be shifted up relative to updates in src by buffer
+		offset -= buf.Len()
 	}
 
 	return p.updateFile(fset, file, src)
