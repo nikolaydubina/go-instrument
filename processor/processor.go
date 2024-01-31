@@ -172,50 +172,48 @@ func (p *Processor) isError(e ast.Field) bool {
 	return false
 }
 
+func (p *Processor) processFunction(fnc *ast.FuncDecl, fncLitCond *funcTypeConditions) []patch {
+	var patches []patch
+
+	funcName := p.functionName(*fnc)
+	if !p.FunctionSelector.AcceptFunction(funcName) {
+		return patches
+	}
+
+	spanName := p.SpanName(p.methodReceiverTypeName(*fnc), funcName)
+	funcCond := &funcTypeConditions{Type: fnc.Type}
+	p.hasPrefixConditions(funcCond)
+
+	if funcLit := functionLiteral(fnc, fncLitCond); funcLit != nil {
+		ps := p.Instrumenter.PrefixStatements(spanName, fncLitCond.hasError)
+		patches = append(patches, patch{pos: funcLit.Body.Pos(), stmts: ps})
+	}
+
+	if !funcCond.hasContext {
+		return patches
+	}
+
+	ps := p.Instrumenter.PrefixStatements(spanName, funcCond.hasError)
+	patches = append(patches, patch{pos: fnc.Body.Pos(), stmts: ps})
+
+	return patches
+}
+
 func (p *Processor) Process(fset *token.FileSet, file *ast.File) error {
 	var patches []patch
-	var funcLitCond *funcTypeConditions
+	var fncLitCond *funcTypeConditions
 
 	astutil.Apply(file, nil, func(c *astutil.Cursor) bool {
 		if c == nil {
 			return true
 		}
 
-		p.packageName(c)
-
-		switch c.Node().(type) {
+		switch fnc := c.Node().(type) {
 		case *ast.FuncDecl:
-		    p.processFunction(c.Node().(*ast.FuncLit))
-			fnc, _ := c.Node().(*ast.FuncDecl)
-			funcName := p.functionName(*fnc)
-			if !p.FunctionSelector.AcceptFunction(funcName) {
-				return true
-			}
-
-			receiverName := p.methodReceiverTypeName(*fnc)
-
-			spanName := p.SpanName(p.methodReceiverTypeName(*fnc), funcName)
-			funcCond := &funcTypeConditions{Type: fnc.Type}
-			p.hasPrefixConditions(funcCond)
-
-			if funcLit := functionLiteral(fnc, funcLitCond); funcLit != nil {
-				ps := p.Instrumenter.PrefixStatements(spanName, funcLitCond.hasError)
-				patches = append(patches, patch{pos: funcLit.Body.Pos(), stmts: ps})
-			}
-
-			if !funcCond.hasContext {
-				return true
-			}
-
-			ps := p.Instrumenter.PrefixStatements(spanName, funcCond.hasError)
-			patches = append(patches, patch{pos: fnc.Body.Pos(), stmts: ps})
-		// anonymous
+			patches = append(patches, p.processFunction(fnc, fncLitCond)...)
 		case *ast.FuncLit:
-			fnc, _ := c.Node().(*ast.FuncLit)
-			funcLitCond = &funcTypeConditions{Type: fnc.Type}
-			p.hasPrefixConditions(funcLitCond)
-		default:
-			return true
+			fncLitCond = &funcTypeConditions{Type: fnc.Type}
+			p.hasPrefixConditions(fncLitCond)
 		}
 		return true
 	})
