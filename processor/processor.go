@@ -194,7 +194,7 @@ func (p *Processor) Process(fset *token.FileSet, file *ast.File) error {
 
 			receiverName := p.methodReceiverTypeName(*fnc)
 
-			spanName := p.SpanName(receiverName, funcName)
+			spanName := p.SpanName(p.methodReceiverTypeName(*fnc), funcName)
 			funcCond := &funcTypeConditions{Type: fnc.Type}
 			p.hasPrefixConditions(funcCond)
 
