@@ -193,9 +193,6 @@ func (p *Processor) Process(fset *token.FileSet, file *ast.File) error {
 			}
 
 			receiverName := p.methodReceiverTypeName(*fnc)
-			if receiverName == "" {
-				receiverName = p.PackageName
-			}
 
 			spanName := p.SpanName(receiverName, funcName)
 			funcCond := &funcTypeConditions{Type: fnc.Type}
