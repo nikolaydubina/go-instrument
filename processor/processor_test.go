@@ -28,7 +28,6 @@ func TestProcessor(t *testing.T) {
 			defaultSelect: true,
 		},
 		{
-			testName:      "basic with include only",
 			app:           "app",
 			fileName:      "../internal/example/basic_include_only.go",
 			fileNameExp:   "../internal/example/instrumented/basic_include_only.go.exp",
