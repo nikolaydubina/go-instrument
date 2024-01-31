@@ -14,7 +14,6 @@ import (
 
 func TestProcessor(t *testing.T) {
 	tests := []struct {
-		testName      string
 		app           string
 		fileName      string
 		fileNameExp   string
