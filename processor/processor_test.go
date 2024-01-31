@@ -36,7 +36,7 @@ func TestProcessor(t *testing.T) {
 	}
 
 	for _, tc := range tests {
-		t.Run(tc.testName, func(t *testing.T) {
+		t.Run(tc.fileName, func(t *testing.T) {
 			src, err := os.ReadFile(tc.fileName)
 			if err != nil {
 				t.Errorf("can not read input file: %s", err)
