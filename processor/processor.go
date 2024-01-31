@@ -32,7 +32,7 @@ func functionLiteral(fnc *ast.FuncDecl, funcLitInst *funcTypeConditions) *ast.Fu
 	}
 
 	returnStmt, stmtOk := fnc.Body.List[0].(*ast.ReturnStmt)
-	if !stmtOk {
+	if !stmtOk || len(returnStmt.Results) != 1 {
 		return nil
 	}
 
@@ -139,23 +139,11 @@ func (p *Processor) isContext(e ast.Field) bool {
 	pkg := ""
 	sym := ""
 
-	if starExpr, starExprOk := e.Type.(*ast.StarExpr); starExprOk {
-		if selectorExpr, selectorExprOk := starExpr.X.(*ast.SelectorExpr); selectorExprOk {
-			pkg = selectorExpr.X.(*ast.Ident).Name
+	if se, ok := e.Type.(*ast.SelectorExpr); ok && se != nil {
+		if v, ok := se.X.(*ast.Ident); ok && v != nil {
+			pkg = v.Name
 		}
-		if selectorExprX, selectorExprXOk := starExpr.X.(*ast.SelectorExpr); selectorExprXOk && selectorExprX.Sel != nil {
-			sym = selectorExprX.Sel.Name
-		}
-		if ident, identOk := starExpr.X.(*ast.Ident); identOk && ident.Obj != nil {
-			sym = ident.Obj.Name
-		}
-	}
-
-	if selectorExpr, selectorExprOk := e.Type.(*ast.SelectorExpr); selectorExprOk {
-		if indent, indentOk := selectorExpr.X.(*ast.Ident); indentOk {
-			pkg = indent.Name
-		}
-		if v := selectorExpr.Sel; v != nil {
+		if v := se.Sel; v != nil {
 			sym = v.Name
 		}
 	}

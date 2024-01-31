@@ -26,7 +26,7 @@ func (p *Processor) patchFile(fset *token.FileSet, file *ast.File, patches ...pa
 		buf.Reset()
 
 		buf.WriteString("\n")
-		if err = format.Node(&buf, fset, patch.stmts); err != nil {
+		if err := format.Node(&buf, fset, patch.stmts); err != nil {
 			return err
 		}
 		buf.WriteString("\n")
