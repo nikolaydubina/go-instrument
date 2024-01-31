@@ -21,7 +21,6 @@ func TestProcessor(t *testing.T) {
 		defaultSelect bool
 	}{
 		{
-			testName:      "basic with default select",
 			app:           "app",
 			fileName:      "../internal/example/basic.go",
 			fileNameExp:   "../internal/example/instrumented/basic.go.exp",
