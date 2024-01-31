@@ -78,7 +78,7 @@ func TestProcessor(t *testing.T) {
 				ErrorType:        `error`,
 			}
 
-			if err = p.Process(fset, file); err != nil {
+			if err := p.Process(fset, file); err != nil {
 				t.Error(err)
 			}
 
