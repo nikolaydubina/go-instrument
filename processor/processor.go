@@ -184,8 +184,8 @@ func (p *Processor) Process(fset *token.FileSet, file *ast.File) error {
 		p.packageName(c)
 
 		switch c.Node().(type) {
-		// original
 		case *ast.FuncDecl:
+		    p.processFunction(c.Node().(*ast.FuncLit))
 			fnc, _ := c.Node().(*ast.FuncDecl)
 			funcName := p.functionName(*fnc)
 			if !p.FunctionSelector.AcceptFunction(funcName) {
