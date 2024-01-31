@@ -27,7 +27,10 @@ func BasicSpanName(receiver, function string) string {
 }
 
 func functionLiteral(fnc *ast.FuncDecl, funcLitInst *funcTypeConditions) *ast.FuncLit {
-	if funcLitInst == nil || len(fnc.Body.List) != 1 {
+	if fnc == nil || fnc.Body == nil || len(fnc.Body.List) != 1 {
+		return nil
+	}
+	if funcLitInst == nil || !funcLitInst.hasContext {
 		return nil
 	}
 
@@ -37,7 +40,7 @@ func functionLiteral(fnc *ast.FuncDecl, funcLitInst *funcTypeConditions) *ast.Fu
 	}
 
 	funcLit, funcLitOk := returnStmt.Results[0].(*ast.FuncLit)
-	if !funcLitOk || !funcLitInst.hasContext {
+	if !funcLitOk || funcLit.Body == nil {
 		return nil
 	}
 	funcLitInst = nil
