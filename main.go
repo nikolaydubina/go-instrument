@@ -94,7 +94,11 @@ func main() {
 		if err != nil {
 			log.Fatal(err)
 		}
-		defer outf.Close()
+		defer func(outf *os.File) {
+			if err := outf.Close(); err != nil {
+				log.Fatal(err)
+			}
+		}(outf)
 		out = outf
 	}
 

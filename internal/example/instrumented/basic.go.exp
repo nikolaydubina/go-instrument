@@ -12,9 +12,27 @@ func AnonymousFuncWithoutContext() func() (name string, err error) {
 	}
 }
 
-func AnonymousFunc() func(ctx context.Context) (name string, err error) {
+func AnonymousFuncOne() func(ctx context.Context) (name string, err error) {
 	return func(ctx context.Context) (name string, err error) {
-		ctx, span := otel.Tracer("app").Start(ctx, "AnonymousFunc")
+		ctx, span := otel.Tracer("app").Start(ctx, "AnonymousFuncOne")
+		defer span.End()
+		defer func() {
+			if err != nil {
+				span.SetStatus(codes.Error, "error")
+				span.RecordError(err)
+			}
+		}()
+
+		return "fluffer", nil
+	}
+}
+
+func AnonymousFuncTwo(ctx context.Context) func() (name string, err error) {
+	ctx, span := otel.Tracer("app").Start(ctx, "AnonymousFuncTwo")
+	defer span.End()
+
+	return func() (name string, err error) {
+		ctx, span := otel.Tracer("app").Start(ctx, "AnonymousFuncTwo")
 		defer span.End()
 		defer func() {
 			if err != nil {

@@ -54,6 +54,9 @@ func (p *Processor) updateFile(fset *token.FileSet, file *ast.File, newSrc []byt
 
 	if newSrc == nil {
 		newSrc, err = formatNodeToBytes(fset, file)
+		if err != nil {
+			return err
+		}
 	}
 
 	fname := fset.Position(file.Pos()).Filename

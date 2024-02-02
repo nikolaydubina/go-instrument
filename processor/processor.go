@@ -26,62 +26,10 @@ func BasicSpanName(receiver, function string) string {
 	return receiver + "." + function
 }
 
-func functionLiteral(fnc *ast.FuncDecl, funcLitInst *funcTypeConditions) *ast.FuncLit {
-	if fnc == nil || fnc.Body == nil || len(fnc.Body.List) != 1 {
-		return nil
-	}
-	if funcLitInst == nil || !funcLitInst.hasContext {
-		return nil
-	}
-
-	returnStmt, stmtOk := fnc.Body.List[0].(*ast.ReturnStmt)
-	if !stmtOk || len(returnStmt.Results) != 1 {
-		return nil
-	}
-
-	funcLit, funcLitOk := returnStmt.Results[0].(*ast.FuncLit)
-	if !funcLitOk || funcLit.Body == nil {
-		return nil
-	}
-	funcLitInst = nil
-
-	return funcLit
-}
-
-// funcTypeConditions collects details on functions and methods
-type funcTypeConditions struct {
-	Type       *ast.FuncType
-	hasContext bool
-	hasError   bool
-}
-
-func (p *Processor) hasPrefixConditions(fn *funcTypeConditions) {
-	if t := fn.Type; t != nil {
-		if ps := t.Params; ps != nil {
-			for _, q := range ps.List {
-				if q == nil {
-					continue
-				}
-				fn.hasContext = fn.hasContext || p.isContext(*q)
-			}
-		}
-
-		if rs := t.Results; rs != nil {
-			for _, q := range rs.List {
-				if q == nil {
-					continue
-				}
-				fn.hasError = fn.hasError || p.isError(*q)
-			}
-		}
-	}
-}
-
 // Processor traverses AST, collects details on functions and methods, and invokes Instrumenter
 type Processor struct {
 	Instrumenter     Instrumenter
 	FunctionSelector FunctionSelector
-	PackageName      string
 	SpanName         func(receiver, function string) string
 	ContextName      string
 	ContextPackage   string
@@ -111,14 +59,6 @@ func (p *Processor) methodReceiverTypeName(spec ast.FuncDecl) string {
 		}
 	}
 	return ""
-}
-
-func (p *Processor) packageName(c *astutil.Cursor) {
-	if c.Node() == nil && c.Name() == "Doc" {
-		if f, ok := c.Parent().(*ast.File); ok {
-			p.PackageName = f.Name.Name
-		}
-	}
 }
 
 func (p *Processor) functionName(spec ast.FuncDecl) string {
@@ -172,49 +112,93 @@ func (p *Processor) isError(e ast.Field) bool {
 	return false
 }
 
-func (p *Processor) processFunction(fnc *ast.FuncDecl, fncLitCond *funcTypeConditions) []patch {
-	var patches []patch
+func (p *Processor) functionHasContext(fnType *ast.FuncType) bool {
+	var hasContext bool
 
-	funcName := p.functionName(*fnc)
-	if !p.FunctionSelector.AcceptFunction(funcName) {
-		return patches
+	if fnType == nil {
+		return hasContext
 	}
 
-	spanName := p.SpanName(p.methodReceiverTypeName(*fnc), funcName)
-	funcCond := &funcTypeConditions{Type: fnc.Type}
-	p.hasPrefixConditions(funcCond)
-
-	if funcLit := functionLiteral(fnc, fncLitCond); funcLit != nil {
-		ps := p.Instrumenter.PrefixStatements(spanName, fncLitCond.hasError)
-		patches = append(patches, patch{pos: funcLit.Body.Pos(), stmts: ps})
+	if ps := fnType.Params; ps != nil {
+		for _, q := range ps.List {
+			if q != nil {
+				hasContext = hasContext || p.isContext(*q)
+			}
+		}
 	}
 
-	if !funcCond.hasContext {
-		return patches
+	return hasContext
+}
+
+func (p *Processor) functionHasError(fnType *ast.FuncType) bool {
+	var hasError bool
+
+	if fnType == nil {
+		return hasError
 	}
 
-	ps := p.Instrumenter.PrefixStatements(spanName, funcCond.hasError)
-	patches = append(patches, patch{pos: fnc.Body.Pos(), stmts: ps})
+	if rs := fnType.Results; rs != nil {
+		for _, q := range rs.List {
+			if q != nil {
+				hasError = hasError || p.isError(*q)
+			}
+		}
+	}
 
-	return patches
+	return hasError
+}
+
+func (p *Processor) anonymousFunction(fnc *ast.FuncDecl) *ast.FuncLit {
+	if fnc == nil || fnc.Body == nil || len(fnc.Body.List) != 1 {
+		return nil
+	}
+
+	returnStmt, stmtOk := fnc.Body.List[0].(*ast.ReturnStmt)
+	if !stmtOk || len(returnStmt.Results) != 1 {
+		return nil
+	}
+
+	funcLit, funcLitOk := returnStmt.Results[0].(*ast.FuncLit)
+	if !funcLitOk || funcLit.Body == nil {
+		return nil
+	}
+
+	return funcLit
 }
 
 func (p *Processor) Process(fset *token.FileSet, file *ast.File) error {
 	var patches []patch
-	var fncLitCond *funcTypeConditions
 
 	astutil.Apply(file, nil, func(c *astutil.Cursor) bool {
 		if c == nil {
 			return true
 		}
 
-		switch fnc := c.Node().(type) {
-		case *ast.FuncDecl:
-			patches = append(patches, p.processFunction(fnc, fncLitCond)...)
-		case *ast.FuncLit:
-			fncLitCond = &funcTypeConditions{Type: fnc.Type}
-			p.hasPrefixConditions(fncLitCond)
+		fn, ok := c.Node().(*ast.FuncDecl)
+		if !ok || fn == nil {
+			return true
 		}
+
+		fname := p.functionName(*fn)
+		if !p.FunctionSelector.AcceptFunction(fname) {
+			return true
+		}
+
+		spanName := p.SpanName(p.methodReceiverTypeName(*fn), fname)
+
+		hasContext := p.functionHasContext(fn.Type)
+
+		if hasContext {
+			ps := p.Instrumenter.PrefixStatements(spanName, p.functionHasError(fn.Type))
+			patches = append(patches, patch{pos: fn.Body.Pos(), stmts: ps})
+		}
+
+		af := p.anonymousFunction(fn)
+		if af != nil && (hasContext || p.functionHasContext(af.Type)) {
+			ps := p.Instrumenter.PrefixStatements(spanName, p.functionHasError(af.Type))
+			patches = append(patches, patch{pos: af.Body.Pos(), stmts: ps})
+		}
+
 		return true
 	})
 
