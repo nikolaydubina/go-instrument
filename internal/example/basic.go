@@ -10,13 +10,13 @@ func AnonymousFuncWithoutContext() func() (name string, err error) {
 	}
 }
 
-func AnonymousFuncOne() func(ctx context.Context) (name string, err error) {
+func AnonymousFunc() func(ctx context.Context) (name string, err error) {
 	return func(ctx context.Context) (name string, err error) {
 		return "fluffer", nil
 	}
 }
 
-func AnonymousFuncTwo(ctx context.Context) func() (name string, err error) {
+func AnonymousFuncSkippedNoContext(ctx context.Context) func() (name string, err error) {
 	return func() (name string, err error) {
 		return "fluffer", nil
 	}

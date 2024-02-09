@@ -101,7 +101,6 @@ More details `go help buildconstraint` and https://pkg.go.dev/cmd/go#hdr-Build_c
 - [ ] Span Tags returns
 - [ ] Assigning `ctx` to `_` when `ctx` is not used in function (`unused assignement` linter checks issue)
 - [ ] Datadog native instrumenter
-- [ ] Anonymous function
 
 ## Motivation
 

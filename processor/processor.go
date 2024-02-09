@@ -38,13 +38,13 @@ type Processor struct {
 	ErrorType        string
 }
 
-func (p *Processor) methodReceiverTypeName(spec ast.FuncDecl) string {
+func (p *Processor) methodReceiverTypeName(fn *ast.FuncDecl) string {
 	// function
-	if spec.Recv == nil {
+	if fn == nil || fn.Recv == nil {
 		return ""
 	}
 	// method
-	for _, v := range spec.Recv.List {
+	for _, v := range fn.Recv.List {
 		if v == nil {
 			continue
 		}
@@ -61,18 +61,18 @@ func (p *Processor) methodReceiverTypeName(spec ast.FuncDecl) string {
 	return ""
 }
 
-func (p *Processor) functionName(spec ast.FuncDecl) string {
-	if spec.Name == nil {
+func (p *Processor) functionName(fn *ast.FuncDecl) string {
+	if fn == nil || fn.Name == nil {
 		return ""
 	}
-	return spec.Name.Name
+	return fn.Name.Name
 }
 
-func (p *Processor) isContext(e ast.Field) bool {
+func (p *Processor) isContext(e *ast.Field) bool {
 	// anonymous arg
 	// multiple symbols
 	// strange symbol
-	if len(e.Names) != 1 || e.Names[0] == nil {
+	if e == nil || len(e.Names) != 1 || e.Names[0] == nil {
 		return false
 	}
 	if e.Names[0].Name != p.ContextName {
@@ -94,7 +94,10 @@ func (p *Processor) isContext(e ast.Field) bool {
 	return pkg == p.ContextPackage && sym == p.ContextType
 }
 
-func (p *Processor) isError(e ast.Field) bool {
+func (p *Processor) isError(e *ast.Field) bool {
+	if e == nil {
+		return false
+	}
 	// anonymous arg
 	// multiple symbols
 	// strange symbol
@@ -113,57 +116,35 @@ func (p *Processor) isError(e ast.Field) bool {
 }
 
 func (p *Processor) functionHasContext(fnType *ast.FuncType) bool {
-	var hasContext bool
-
 	if fnType == nil {
-		return hasContext
+		return false
 	}
 
 	if ps := fnType.Params; ps != nil {
 		for _, q := range ps.List {
-			if q != nil {
-				hasContext = hasContext || p.isContext(*q)
+			if p.isContext(q) {
+				return true
 			}
 		}
 	}
 
-	return hasContext
+	return false
 }
 
 func (p *Processor) functionHasError(fnType *ast.FuncType) bool {
-	var hasError bool
-
 	if fnType == nil {
-		return hasError
+		return false
 	}
 
 	if rs := fnType.Results; rs != nil {
 		for _, q := range rs.List {
-			if q != nil {
-				hasError = hasError || p.isError(*q)
+			if p.isError(q) {
+				return true
 			}
 		}
 	}
 
-	return hasError
-}
-
-func (p *Processor) anonymousFunction(fnc *ast.FuncDecl) *ast.FuncLit {
-	if fnc == nil || fnc.Body == nil || len(fnc.Body.List) != 1 {
-		return nil
-	}
-
-	returnStmt, stmtOk := fnc.Body.List[0].(*ast.ReturnStmt)
-	if !stmtOk || len(returnStmt.Results) != 1 {
-		return nil
-	}
-
-	funcLit, funcLitOk := returnStmt.Results[0].(*ast.FuncLit)
-	if !funcLitOk || funcLit.Body == nil {
-		return nil
-	}
-
-	return funcLit
+	return false
 }
 
 func (p *Processor) Process(fset *token.FileSet, file *ast.File) error {
@@ -174,29 +155,29 @@ func (p *Processor) Process(fset *token.FileSet, file *ast.File) error {
 			return true
 		}
 
-		fn, ok := c.Node().(*ast.FuncDecl)
-		if !ok || fn == nil {
+		var receiver, fname string
+		var fnType *ast.FuncType
+		var fnBody *ast.BlockStmt
+
+		switch fn := c.Node().(type) {
+		case *ast.FuncLit:
+			fnType, fnBody = fn.Type, fn.Body
+			fname = "anonymous"
+		case *ast.FuncDecl:
+			fnType, fnBody = fn.Type, fn.Body
+			fname = p.functionName(fn)
+			receiver = p.methodReceiverTypeName(fn)
+		default:
 			return true
 		}
 
-		fname := p.functionName(*fn)
 		if !p.FunctionSelector.AcceptFunction(fname) {
 			return true
 		}
 
-		spanName := p.SpanName(p.methodReceiverTypeName(*fn), fname)
-
-		hasContext := p.functionHasContext(fn.Type)
-
-		if hasContext {
-			ps := p.Instrumenter.PrefixStatements(spanName, p.functionHasError(fn.Type))
-			patches = append(patches, patch{pos: fn.Body.Pos(), stmts: ps})
-		}
-
-		af := p.anonymousFunction(fn)
-		if af != nil && (hasContext || p.functionHasContext(af.Type)) {
-			ps := p.Instrumenter.PrefixStatements(spanName, p.functionHasError(af.Type))
-			patches = append(patches, patch{pos: af.Body.Pos(), stmts: ps})
+		if p.functionHasContext(fnType) {
+			ps := p.Instrumenter.PrefixStatements(p.SpanName(receiver, fname), p.functionHasError(fnType))
+			patches = append(patches, patch{pos: fnBody.Pos(), stmts: ps})
 		}
 
 		return true
