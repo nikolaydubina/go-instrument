@@ -6,6 +6,45 @@ import (
 	"go.opentelemetry.io/otel/codes"
 )
 
+func AnonymousFuncWithoutContext() func() (name string, err error) {
+	return func() (name string, err error) {
+		return "fluffer", nil
+	}
+}
+
+func AnonymousFuncOne() func(ctx context.Context) (name string, err error) {
+	return func(ctx context.Context) (name string, err error) {
+		ctx, span := otel.Tracer("app").Start(ctx, "AnonymousFuncOne")
+		defer span.End()
+		defer func() {
+			if err != nil {
+				span.SetStatus(codes.Error, "error")
+				span.RecordError(err)
+			}
+		}()
+
+		return "fluffer", nil
+	}
+}
+
+func AnonymousFuncTwo(ctx context.Context) func() (name string, err error) {
+	ctx, span := otel.Tracer("app").Start(ctx, "AnonymousFuncTwo")
+	defer span.End()
+
+	return func() (name string, err error) {
+		ctx, span := otel.Tracer("app").Start(ctx, "AnonymousFuncTwo")
+		defer span.End()
+		defer func() {
+			if err != nil {
+				span.SetStatus(codes.Error, "error")
+				span.RecordError(err)
+			}
+		}()
+
+		return "fluffer", nil
+	}
+}
+
 type Cat struct{}
 
 func (s Cat) Name(ctx context.Context) (name string, err error) {

@@ -26,7 +26,7 @@ func BasicSpanName(receiver, function string) string {
 	return receiver + "." + function
 }
 
-// Processor traverses AST, collects details on funtions and methods, and invokes Instrumenter
+// Processor traverses AST, collects details on functions and methods, and invokes Instrumenter
 type Processor struct {
 	Instrumenter     Instrumenter
 	FunctionSelector FunctionSelector
@@ -49,7 +49,7 @@ func (p *Processor) methodReceiverTypeName(spec ast.FuncDecl) string {
 			continue
 		}
 		t := v.Type
-		// poitner receiver
+		// pointer receiver
 		if v, ok := v.Type.(*ast.StarExpr); ok {
 			t = v.X
 		}
@@ -70,7 +70,7 @@ func (p *Processor) functionName(spec ast.FuncDecl) string {
 
 func (p *Processor) isContext(e ast.Field) bool {
 	// anonymous arg
-	// multilple symbols
+	// multiple symbols
 	// strange symbol
 	if len(e.Names) != 1 || e.Names[0] == nil {
 		return false
@@ -96,7 +96,7 @@ func (p *Processor) isContext(e ast.Field) bool {
 
 func (p *Processor) isError(e ast.Field) bool {
 	// anonymous arg
-	// multilple symbols
+	// multiple symbols
 	// strange symbol
 	if len(e.Names) != 1 || e.Names[0] == nil {
 		return false
@@ -110,6 +110,60 @@ func (p *Processor) isError(e ast.Field) bool {
 	}
 
 	return false
+}
+
+func (p *Processor) functionHasContext(fnType *ast.FuncType) bool {
+	var hasContext bool
+
+	if fnType == nil {
+		return hasContext
+	}
+
+	if ps := fnType.Params; ps != nil {
+		for _, q := range ps.List {
+			if q != nil {
+				hasContext = hasContext || p.isContext(*q)
+			}
+		}
+	}
+
+	return hasContext
+}
+
+func (p *Processor) functionHasError(fnType *ast.FuncType) bool {
+	var hasError bool
+
+	if fnType == nil {
+		return hasError
+	}
+
+	if rs := fnType.Results; rs != nil {
+		for _, q := range rs.List {
+			if q != nil {
+				hasError = hasError || p.isError(*q)
+			}
+		}
+	}
+
+	return hasError
+}
+
+func (p *Processor) anonymousFunction(fnc *ast.FuncDecl) *ast.FuncLit {
+	if fnc == nil || fnc.Body == nil || len(fnc.Body.List) != 1 {
+		return nil
+	}
+
+	returnStmt, stmtOk := fnc.Body.List[0].(*ast.ReturnStmt)
+	if !stmtOk || len(returnStmt.Results) != 1 {
+		return nil
+	}
+
+	funcLit, funcLitOk := returnStmt.Results[0].(*ast.FuncLit)
+	if !funcLitOk || funcLit.Body == nil {
+		return nil
+	}
+
+	return funcLit
 }
 
 func (p *Processor) Process(fset *token.FileSet, file *ast.File) error {
@@ -132,35 +186,18 @@ func (p *Processor) Process(fset *token.FileSet, file *ast.File) error {
 
 		spanName := p.SpanName(p.methodReceiverTypeName(*fn), fname)
 
-		hasContext := false
-		hasError := false
+		hasContext := p.functionHasContext(fn.Type)
 
-		if t := fn.Type; t != nil {
-			if ps := t.Params; ps != nil {
-				for _, q := range ps.List {
-					if q == nil {
-						continue
-					}
-					hasContext = hasContext || p.isContext(*q)
-				}
-			}
-
-			if rs := t.Results; rs != nil {
-				for _, q := range rs.List {
-					if q == nil {
-						continue
-					}
-					hasError = hasError || p.isError(*q)
-				}
-			}
+		if hasContext {
+			ps := p.Instrumenter.PrefixStatements(spanName, p.functionHasError(fn.Type))
+			patches = append(patches, patch{pos: fn.Body.Pos(), stmts: ps})
 		}
 
-		if !hasContext {
-			return true
+		af := p.anonymousFunction(fn)
+		if af != nil && (hasContext || p.functionHasContext(af.Type)) {
+			ps := p.Instrumenter.PrefixStatements(spanName, p.functionHasError(af.Type))
+			patches = append(patches, patch{pos: af.Body.Pos(), stmts: ps})
 		}
-
-		ps := p.Instrumenter.PrefixStatements(spanName, hasError)
-		patches = append(patches, patch{pos: fn.Body.Pos(), stmts: ps})
 
 		return true
 	})
