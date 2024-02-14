@@ -146,6 +146,7 @@ internal/example/basic.go:132:6: cannot inline OneLineTypical: unhandled op DEFE
 * https://github.com/open-telemetry/opentelemetry-go-instrumentation - (in development) official eBPF based Go auto instrumentation
 * https://github.com/keyval-dev/opentelemetry-go-instrumentation - eBPF based Go auto instrumentation of _pre-selected_ libraries
 * https://developers.mattermost.com/blog/instrumenting-go-code-via-ast - Very similar. Instrumenting Go code for tracing.
+* https://github.com/gobwas/gtrace — non-OTEL, custom tracing framework that uses code generation
 
 ## Appendix B: Other Languages
 
