@@ -21,14 +21,14 @@ func TestProcessor(t *testing.T) {
 	}{
 		{
 			app:           "app",
-			fileName:      "../internal/example/basic.go",
-			fileNameExp:   "../internal/example/instrumented/basic.go.exp",
+			fileName:      "../internal/testdata/basic.go",
+			fileNameExp:   "../internal/testdata/instrumented/basic.go.exp",
 			defaultSelect: true,
 		},
 		{
 			app:           "app",
-			fileName:      "../internal/example/basic_include_only.go",
-			fileNameExp:   "../internal/example/instrumented/basic_include_only.go.exp",
+			fileName:      "../internal/testdata/basic_include_only.go",
+			fileNameExp:   "../internal/testdata/instrumented/basic_include_only.go.exp",
 			defaultSelect: false,
 		},
 	}
