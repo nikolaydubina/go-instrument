@@ -52,10 +52,8 @@ func process(fileName, app string, overwrite, defaultSelect, skipGenerated bool)
 
 	fset := token.NewFileSet()
 
-	file, err := parser.ParseFile(fset, fileName, formattedSrc, parser.ParseComments)
-	if err != nil || file == nil {
-		return err
-	}
+	// format already ensures that file is parsable
+	file, _ := parser.ParseFile(fset, fileName, formattedSrc, parser.ParseComments)
 	if skipGenerated && ast.IsGenerated(file) {
 		return errors.New("skipping generated file")
 	}
@@ -69,7 +67,7 @@ func process(fileName, app string, overwrite, defaultSelect, skipGenerated bool)
 
 	commands, err := processor.CommandsFromFile(*file)
 	if err != nil {
-		log.Fatal(err)
+		return err
 	}
 	functionSelector := processor.NewMapFunctionSelectorFromCommands(defaultSelect, commands)
 
@@ -90,14 +88,14 @@ func process(fileName, app string, overwrite, defaultSelect, skipGenerated bool)
 	}
 
 	if err := p.Process(fset, file); err != nil {
-		log.Fatal(err)
+		return err
 	}
 
 	var out io.Writer = os.Stdout
 	if overwrite {
 		outf, err := os.OpenFile(fileName, os.O_RDWR|os.O_TRUNC, 0)
 		if err != nil {
-			log.Fatal(err)
+			return err
 		}
 		defer outf.Close()
 		out = outf
