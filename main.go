@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"flag"
 	"go/ast"
 	"go/format"
@@ -29,34 +30,40 @@ func main() {
 	flag.BoolVar(&skipGenerated, "skip-generated", false, "skip generated files")
 	flag.Parse()
 
+	if err := process(fileName, app, overwrite, defaultSelect, skipGenerated); err != nil {
+		log.Fatal(err.Error())
+	}
+}
+
+func process(fileName, app string, overwrite, defaultSelect, skipGenerated bool) error {
 	if fileName == "" {
-		log.Fatalln("missing arg: file name")
+		return errors.New("missing arg: file name")
 	}
 
 	src, err := os.ReadFile(fileName)
 	if err != nil {
-		log.Fatalf("can not read input file: %s", err)
+		return err
 	}
 
 	formattedSrc, err := format.Source(src)
 	if err != nil {
-		log.Fatalf("can not format input file: %s", err)
+		return err
 	}
 
 	fset := token.NewFileSet()
 
 	file, err := parser.ParseFile(fset, fileName, formattedSrc, parser.ParseComments)
 	if err != nil || file == nil {
-		log.Fatalf("can not parse input file: %s", err)
+		return err
 	}
 	if skipGenerated && ast.IsGenerated(file) {
-		log.Fatalf("skipping generated file")
+		return errors.New("skipping generated file")
 	}
 
 	directives := processor.GoBuildDirectivesFromFile(*file)
 	for _, q := range directives {
 		if q.SkipFile() {
-			return
+			return nil
 		}
 	}
 
@@ -96,7 +103,5 @@ func main() {
 		out = outf
 	}
 
-	if err := format.Node(out, fset, file); err != nil {
-		log.Fatal(err)
-	}
+	return format.Node(out, fset, file)
 }
