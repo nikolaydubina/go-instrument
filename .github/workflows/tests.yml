@@ -30,7 +30,8 @@ jobs:
 
       - name: Test
         env:
-          GOCOVERAGE: ./coverage
+          GOPACKAGE: main,github.com/nikolaydubina/go-instrument/processor,github.com/nikolaydubina/go-instrument/instrument
+          GOCOVERDIR: ./coverage
         run: |
           mkdir ./coverage
           go test -coverprofile=./coverage/coverage.out -cover ./...
