@@ -29,8 +29,6 @@ jobs:
           go mod download
 
       - name: Test
-        env:
-          GOCOVERDIR: ./coverage
         run: |
           mkdir ./coverage
           go test -coverprofile=./coverage/coverage.out -cover ./...
