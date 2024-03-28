@@ -32,6 +32,7 @@ jobs:
         env:
           GOCOVERAGE: ./coverage
         run: |
+          mkdir ./coverage
           go test -coverprofile=./coverage/coverage.out -cover ./...
           go tool covdata textfmt -i=./coverage -o coverage.out
 
