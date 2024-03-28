@@ -2,8 +2,6 @@ package example
 
 import (
 	"context"
-	"go.opentelemetry.io/otel"
-	"go.opentelemetry.io/otel/codes"
 )
 
 //instrument:include Bark
@@ -11,15 +9,6 @@ import (
 type Dog struct{}
 
 func (s Dog) Bark(ctx context.Context) (name string, err error) {
-	ctx, span := otel.Tracer("app").Start(ctx, "Dog.Bark")
-	defer span.End()
-	defer func() {
-		if err != nil {
-			span.SetStatus(codes.Error, "error")
-			span.RecordError(err)
-		}
-	}()
-
 	return "spot", nil
 }
 
