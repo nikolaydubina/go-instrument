@@ -52,8 +52,10 @@ func process(fileName, app string, overwrite, defaultSelect, skipGenerated bool)
 
 	fset := token.NewFileSet()
 
-	// format already ensures that file is parsable
-	file, _ := parser.ParseFile(fset, fileName, formattedSrc, parser.ParseComments)
+	file, err := parser.ParseFile(fset, fileName, formattedSrc, parser.ParseComments)
+	if err != nil {
+		return err
+	}
 	if skipGenerated && ast.IsGenerated(file) {
 		return errors.New("skipping generated file")
 	}
