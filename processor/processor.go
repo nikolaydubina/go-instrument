@@ -184,7 +184,7 @@ func (p *Processor) Process(fset *token.FileSet, file *ast.File) error {
 	})
 
 	if len(patches) > 0 {
-		if err := p.patchFile(fset, file, patches...); err != nil {
+		if err := patchFile(fset, file, patches...); err != nil {
 			return err
 		}
 
