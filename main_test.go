@@ -33,7 +33,7 @@ func TestMain(t *testing.T) {
 	t.Run("when basic, then ok", func(t *testing.T) {
 		f := copyFile(t, "./internal/testdata/basic.go")
 		cmd := exec.Command(testbin, "-app", "app", "-w", "-filename", f)
-		cmd.Env = append(cmd.Environ(), "GOFILE=internal/testdata/color.go", "GOPACKAGE="+os.Getenv("GOPACKAGE"), "GOCOVERDIR="+os.Getenv("GOCOVERDIR"))
+		cmd.Env = append(cmd.Environ(), "GOCOVERDIR="+os.Getenv("GOCOVERDIR"))
 		if err := cmd.Run(); err != nil {
 			t.Errorf(err.Error())
 		}
@@ -43,7 +43,7 @@ func TestMain(t *testing.T) {
 	t.Run("when include only, then ok", func(t *testing.T) {
 		f := copyFile(t, "./internal/testdata/basic_include_only.go")
 		cmd := exec.Command(testbin, "-app", "app", "-w", "-all=false", "-filename", f)
-		cmd.Env = append(cmd.Environ(), "GOFILE=internal/testdata/color.go", "GOPACKAGE="+os.Getenv("GOPACKAGE"), "GOCOVERDIR="+os.Getenv("GOCOVERDIR"))
+		cmd.Env = append(cmd.Environ(), "GOCOVERDIR="+os.Getenv("GOCOVERDIR"))
 		if err := cmd.Run(); err != nil {
 			t.Errorf(err.Error())
 		}
