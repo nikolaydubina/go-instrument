@@ -13,7 +13,7 @@ type patch struct {
 	stmts []ast.Stmt
 }
 
-func (p *Processor) patchFile(fset *token.FileSet, file *ast.File, patches ...patch) error {
+func patchFile(fset *token.FileSet, file *ast.File, patches ...patch) error {
 	src, err := formatNodeToBytes(fset, file)
 	if err != nil {
 		return err
@@ -37,7 +37,13 @@ func (p *Processor) patchFile(fset *token.FileSet, file *ast.File, patches ...pa
 		offset -= buf.Len()
 	}
 
-	return p.updateFile(fset, file, src)
+	nfile, err := parser.ParseFile(fset, fset.Position(file.Pos()).Filename, src, parser.ParseComments)
+	if err != nil {
+		return err
+	}
+
+	*file = *nfile
+	return nil
 }
 
 func formatNodeToBytes(fset *token.FileSet, node any) ([]byte, error) {
@@ -45,28 +51,5 @@ func formatNodeToBytes(fset *token.FileSet, node any) ([]byte, error) {
 	if err := format.Node(&buf, fset, node); err != nil {
 		return nil, err
 	}
-
 	return buf.Bytes(), nil
-}
-
-func (p *Processor) updateFile(fset *token.FileSet, file *ast.File, newSrc []byte) error {
-	var err error
-
-	if newSrc == nil {
-		newSrc, err = formatNodeToBytes(fset, file)
-		if err != nil {
-			return err
-		}
-	}
-
-	fname := fset.Position(file.Pos()).Filename
-
-	nfile, err := parser.ParseFile(fset, fname, newSrc, parser.ParseComments)
-	if err != nil {
-		return err
-	}
-
-	*file = *nfile
-
-	return nil
 }
