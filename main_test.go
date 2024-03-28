@@ -5,6 +5,7 @@ import (
 	"os/exec"
 	"path"
 	"testing"
+	"time"
 )
 
 func FuzzBadFile(f *testing.F) {
@@ -30,19 +31,21 @@ func TestMain(t *testing.T) {
 	exec.Command("go", "build", "-cover", "-o", testbin, "main.go").Run()
 
 	t.Run("when basic, then ok", func(t *testing.T) {
-		cmd := exec.Command(testbin, "-app", "app", "-w", "-filename", "./internal/testdata/basic.go")
+		f := copyFile(t, "./internal/testdata/basic.go")
+		cmd := exec.Command(testbin, "-app", "app", "-w", "-filename", f)
 		if err := cmd.Run(); err != nil {
-			t.Fatal(err)
+			t.Errorf(err.Error())
 		}
-		assertEqFile(t, "./internal/testdata/basic.go", "internal/testdata/instrumented/basic.go.exp")
+		assertEqFile(t, "./internal/testdata/instrumented/basic.go.exp", f)
 	})
 
 	t.Run("when include only, then ok", func(t *testing.T) {
-		cmd := exec.Command(testbin, "-app", "app", "-w", "-all=false", "-filename", "./internal/testdata/basic_include_only.go")
+		f := copyFile(t, "./internal/testdata/basic_include_only.go")
+		cmd := exec.Command(testbin, "-app", "app", "-w", "-all=false", "-filename", f)
 		if err := cmd.Run(); err != nil {
-			t.Fatal(err)
+			t.Errorf(err.Error())
 		}
-		assertEqFile(t, "./internal/testdata/basic_include_only.go", "internal/testdata/instrumented/basic_include_only.go.exp")
+		assertEqFile(t, "./internal/testdata/instrumented/basic_include_only.go.exp", f)
 	})
 }
 
@@ -50,6 +53,13 @@ func assertEqFile(t *testing.T, a, b string) {
 	fa, _ := os.ReadFile(a)
 	fb, _ := os.ReadFile(b)
 	if string(fa) != string(fb) {
-		t.Error("files are different")
+		t.Errorf("files are different: %s != %s", string(fa), string(fb))
 	}
+}
+
+func copyFile(t *testing.T, from string) string {
+	f := path.Join(t.TempDir(), time.Now().Format("20060102-150405-"))
+	fbytes, _ := os.ReadFile(from)
+	os.WriteFile(f, fbytes, 0644)
+	return f
 }
