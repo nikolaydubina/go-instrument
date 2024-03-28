@@ -92,11 +92,7 @@ func main() {
 		if err != nil {
 			log.Fatal(err)
 		}
-		defer func(outf *os.File) {
-			if err := outf.Close(); err != nil {
-				log.Fatal(err)
-			}
-		}(outf)
+		defer outf.Close()
 		out = outf
 	}
 
