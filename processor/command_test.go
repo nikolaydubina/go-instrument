@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"go/parser"
 	"go/token"
+	"os"
+	"path"
 	"testing"
 
 	"github.com/nikolaydubina/go-instrument/processor"
@@ -45,4 +47,17 @@ func TestParseCommandFromFile_Error(t *testing.T) {
 			}
 		})
 	}
+}
+
+func FuzzBadFile(f *testing.F) {
+	f.Fuzz(func(t *testing.T, file string) {
+		badfile := path.Join(t.TempDir(), "bad-file")
+		os.WriteFile(badfile, []byte(file), 0755)
+
+		t.Run("when bad go file, then error", func(t *testing.T) {
+			if _, err := parser.ParseFile(token.NewFileSet(), badfile, nil, parser.ParseComments); err == nil {
+				t.Errorf("error expected")
+			}
+		})
+	})
 }
