@@ -60,7 +60,6 @@ func main() {
 		}
 	}
 
-	// extract all commands from file comments
 	commands, err := processor.CommandsFromFile(*file)
 	if err != nil {
 		log.Fatal(err)
@@ -87,7 +86,6 @@ func main() {
 		log.Fatal(err)
 	}
 
-	// output
 	var out io.Writer = os.Stdout
 	if overwrite {
 		outf, err := os.OpenFile(fileName, os.O_RDWR|os.O_TRUNC, 0)
