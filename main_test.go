@@ -78,6 +78,22 @@ func TestMain(t *testing.T) {
 			t.Errorf("expected exit code 1")
 		}
 	})
+
+	t.Run("when non filename, then err", func(t *testing.T) {
+		cmd := exec.Command(testbin)
+		cmd.Env = append(cmd.Environ(), "GOCOVERDIR=./coverage")
+		if err := cmd.Run(); err == nil {
+			t.Errorf("expected exit code 1")
+		}
+	})
+
+	t.Run("when can not parse commands, then err", func(t *testing.T) {
+		cmd := exec.Command(testbin, "-app", "app", "-w", "-all=false", "-filename", "./internal/testdata/error_unkonwn_command.go")
+		cmd.Env = append(cmd.Environ(), "GOCOVERDIR=./coverage")
+		if err := cmd.Run(); err == nil {
+			t.Errorf("expected exit code 1")
+		}
+	})
 }
 
 func assertEqFile(t *testing.T, a, b string) {
