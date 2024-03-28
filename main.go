@@ -8,7 +8,6 @@ import (
 	"go/parser"
 	"go/token"
 	"io"
-	"log"
 	"os"
 
 	"github.com/nikolaydubina/go-instrument/instrument"
@@ -31,7 +30,8 @@ func main() {
 	flag.Parse()
 
 	if err := process(fileName, app, overwrite, defaultSelect, skipGenerated); err != nil {
-		log.Fatal(err.Error())
+		os.Stderr.WriteString(err.Error())
+		os.Exit(1)
 	}
 }
 
