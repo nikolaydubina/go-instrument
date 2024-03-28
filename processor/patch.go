@@ -14,11 +14,12 @@ type patch struct {
 }
 
 func patchFile(fset *token.FileSet, file *ast.File, patches ...patch) error {
-	var buf bytes.Buffer
-	if err := format.Node(&buf, fset, file); err != nil {
+	src, err := formatNodeToBytes(fset, file)
+	if err != nil {
 		return err
 	}
-	src := buf.Bytes()
+
+	var buf bytes.Buffer
 
 	offset := int(file.FileStart) - 1
 	for _, patch := range patches {
@@ -40,6 +41,15 @@ func patchFile(fset *token.FileSet, file *ast.File, patches ...patch) error {
 	if err != nil {
 		return err
 	}
+
 	*file = *nfile
 	return nil
+}
+
+func formatNodeToBytes(fset *token.FileSet, node any) ([]byte, error) {
+	var buf bytes.Buffer
+	if err := format.Node(&buf, fset, node); err != nil {
+		return nil, err
+	}
+	return buf.Bytes(), nil
 }
