@@ -2,6 +2,8 @@ package example
 
 import (
 	"context"
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/codes"
 )
 
 func AnonymousFuncWithoutContext() func() (name string, err error) {
@@ -12,11 +14,23 @@ func AnonymousFuncWithoutContext() func() (name string, err error) {
 
 func AnonymousFunc() func(ctx context.Context) (name string, err error) {
 	return func(ctx context.Context) (name string, err error) {
+		ctx, span := otel.Tracer("app").Start(ctx, "anonymous")
+		defer span.End()
+		defer func() {
+			if err != nil {
+				span.SetStatus(codes.Error, "error")
+				span.RecordError(err)
+			}
+		}()
+
 		return "fluffer", nil
 	}
 }
 
 func AnonymousFuncSkippedNoContext(ctx context.Context) func() (name string, err error) {
+	ctx, span := otel.Tracer("app").Start(ctx, "AnonymousFuncSkippedNoContext")
+	defer span.End()
+
 	return func() (name string, err error) {
 		return "fluffer", nil
 	}
@@ -25,28 +39,76 @@ func AnonymousFuncSkippedNoContext(ctx context.Context) func() (name string, err
 type Cat struct{}
 
 func (s Cat) Name(ctx context.Context) (name string, err error) {
+	ctx, span := otel.Tracer("app").Start(ctx, "Cat.Name")
+	defer span.End()
+	defer func() {
+		if err != nil {
+			span.SetStatus(codes.Error, "error")
+			span.RecordError(err)
+		}
+	}()
+
 	return "fluffer", nil
 }
 
 type Apple struct{}
 
 func (s *Apple) MethodWithPointerReciver(ctx context.Context, a int) (err error) {
+	ctx, span := otel.Tracer("app").Start(ctx, "Apple.MethodWithPointerReciver")
+	defer span.End()
+	defer func() {
+		if err != nil {
+			span.SetStatus(codes.Error, "error")
+			span.RecordError(err)
+		}
+	}()
+
 	return nil
 }
 
 func (s Apple) MethodWithValueReciver(ctx context.Context, a int) (err error) {
+	ctx, span := otel.Tracer("app").Start(ctx, "Apple.MethodWithValueReciver")
+	defer span.End()
+	defer func() {
+		if err != nil {
+			span.SetStatus(codes.Error, "error")
+			span.RecordError(err)
+		}
+	}()
+
 	return nil
 }
 
 func (*Apple) MethodWithPointerReciverUnnamed(ctx context.Context, a int) (err error) {
+	ctx, span := otel.Tracer("app").Start(ctx, "Apple.MethodWithPointerReciverUnnamed")
+	defer span.End()
+	defer func() {
+		if err != nil {
+			span.SetStatus(codes.Error, "error")
+			span.RecordError(err)
+		}
+	}()
+
 	return nil
 }
 
 func (Apple) MethodWithValueReciverUnnamed(ctx context.Context, a int) (err error) {
+	ctx, span := otel.Tracer("app").Start(ctx, "Apple.MethodWithValueReciverUnnamed")
+	defer span.End()
+	defer func() {
+		if err != nil {
+			span.SetStatus(codes.Error, "error")
+			span.RecordError(err)
+		}
+	}()
+
 	return nil
 }
 
 func Fib(ctx context.Context, n int) int {
+	ctx, span := otel.Tracer("app").Start(ctx, "Fib")
+	defer span.End()
+
 	if n == 0 || n == 1 {
 		return 1
 	}
@@ -57,10 +119,22 @@ func Fib(ctx context.Context, n int) int {
 //instrument:include Basic
 
 func Basic(ctx context.Context) (err error) {
+	ctx, span := otel.Tracer("app").Start(ctx, "Basic")
+	defer span.End()
+	defer func() {
+		if err != nil {
+			span.SetStatus(codes.Error, "error")
+			span.RecordError(err)
+		}
+	}()
+
 	return nil
 }
 
 func Comment(ctx context.Context) int {
+	ctx, span := otel.Tracer("app").Start(ctx, "Comment")
+	defer span.End()
+
 	// some-comment first line
 	// some-comment second line
 	return 43
@@ -72,7 +146,11 @@ func SkipTwo(ctx context.Context) {
 	//instrument:exclude SkipTwo
 }
 
-func WillNotSkipThree(ctx context.Context) { /* instrument:excluce SkipThree */ }
+func WillNotSkipThree(ctx context.Context) {
+	ctx, span := otel.Tracer("app").Start(ctx, "WillNotSkipThree")
+	defer span.End()
+	/* instrument:excluce SkipThree */
+}
 
 //instrument:exclude Skip|Something
 
@@ -83,7 +161,10 @@ func WillNotSkipThree(ctx context.Context) { /* instrument:excluce SkipThree */ 
 //instrument:include .*
 
 // instrument:exclude WillNotSkipFour
-func WillNotSkipFour(ctx context.Context) {}
+func WillNotSkipFour(ctx context.Context) {
+	ctx, span := otel.Tracer("app").Start(ctx, "WillNotSkipFour")
+	defer span.End()
+}
 
 func CommentMultiline() error {
 	/*
@@ -104,7 +185,11 @@ func fib(n int) int {
 
 func OneLine(n int) int { return fib(n) }
 
-func OneLineTypical(ctx context.Context, n int) (int, error) { return fib(n), nil }
+func OneLineTypical(ctx context.Context, n int) (int, error) {
+	ctx, span := otel.Tracer("app").Start(ctx, "OneLineTypical")
+	defer span.End()
+	return fib(n), nil
+}
 
 func OneLineWithComment() int { /* comment 1 */ return 42 /* comment 2 */ }
 
@@ -121,10 +206,16 @@ func MultipleContextMultipleErrorCollapsed(a, b context.Context) (erra, errob er
 }
 
 func MultipleErrorNotNamed(ctx context.Context) (error, error) {
+	ctx, span := otel.Tracer("app").Start(ctx, "MultipleErrorNotNamed")
+	defer span.End()
+
 	return nil, nil
 }
 
 func Closure(ctx context.Context) (int, error) {
+	ctx, span := otel.Tracer("app").Start(ctx, "Closure")
+	defer span.End()
+
 	a := func(x int) (int, error) { return x + 1, nil }
 	return a(5)
 }

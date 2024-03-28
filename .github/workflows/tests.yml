@@ -29,10 +29,14 @@ jobs:
           go mod download
 
       - name: Test
-        run: go test -coverprofile=coverage.out -cover ./...
+        env:
+          GOCOVERAGE: ./coverage
+        run: |
+          go test -coverprofile=./coverage/coverage.out -cover ./...
+          go tool covdata textfmt -i=./coverage -o coverage.out
 
       - name: Fuzz
-        run: go test -fuzz=FuzzBadFile -fuzztime=5s ./processor
+        run: go test -fuzz=FuzzBadFile -fuzztime=5s .
 
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@c16abc29c95fcf9174b58eb7e1abf4c866893bc8 # v4.1.1
