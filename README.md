@@ -125,18 +125,18 @@ It is expected that Go will less likely inline.
 
 For example, can inline function
 ```bash
-$ go build -gcflags="-m -m" ./internal/example 2>&1 | grep OneLine
-internal/example/basic.go:80:6: can inline OneLineTypical with cost 62 as: func(context.Context, int) (int, error) { return fib(n), nil }
+$ go build -gcflags="-m -m" ./internal/testdata 2>&1 | grep OneLine
+internal/testdata/basic.go:80:6: can inline OneLineTypical with cost 62 as: func(context.Context, int) (int, error) { return fib(n), nil }
 ```
 
 ```bash
-go-instrument -w -filename internal/example/basic.go
+go-instrument -w -filename internal/testdata/basic.go
 ```
 
 Can not inline after instrumentation
 ```bash
-$ go build -gcflags="-m -m" ./internal/example 2>&1 | grep OneLine
-internal/example/basic.go:132:6: cannot inline OneLineTypical: unhandled op DEFER
+$ go build -gcflags="-m -m" ./internal/testdata 2>&1 | grep OneLine
+internal/testdata/basic.go:132:6: cannot inline OneLineTypical: unhandled op DEFER
 ``` 
 
 ----

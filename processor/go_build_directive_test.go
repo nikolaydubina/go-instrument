@@ -14,14 +14,14 @@ func TestGoBuildDirectivesFromFile(t *testing.T) {
 		directives []processor.GoBuildDirective
 	}{
 		{
-			fileName: "../internal/example/skipped_buildignore.go",
+			fileName: "../internal/testdata/skipped_buildignore.go",
 			directives: []processor.GoBuildDirective{
 				processor.GoBuildIgnore,
 				processor.BuildIgnore,
 			},
 		},
 		{
-			fileName: "../internal/example/skipped_gobuildignore.go",
+			fileName: "../internal/testdata/skipped_gobuildignore.go",
 			directives: []processor.GoBuildDirective{
 				processor.GoBuildIgnore,
 			},
