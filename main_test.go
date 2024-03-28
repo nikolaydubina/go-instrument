@@ -4,6 +4,7 @@ import (
 	"os"
 	"os/exec"
 	"path"
+	"strings"
 	"testing"
 	"time"
 )
@@ -51,10 +52,14 @@ func TestMain(t *testing.T) {
 	})
 
 	t.Run("when generated file, then err", func(t *testing.T) {
-		cmd := exec.Command(testbin, "-app", "app", "-w", "-skip-generated", "true", "-filename", "./internal/testdata/skipped_generated.go")
+		cmd := exec.Command(testbin, "-app", "app", "-w", "-skip-generated=true", "-filename", "./internal/testdata/skipped_generated.go")
 		cmd.Env = append(cmd.Environ(), "GOCOVERDIR=./coverage")
-		if err := cmd.Run(); err == nil {
+		out, err := cmd.CombinedOutput()
+		if err == nil {
 			t.Errorf("expected exit code 1")
+		}
+		if !strings.Contains(string(out), "skipping generated file") {
+			t.Errorf("expected skipping generated file")
 		}
 	})
 

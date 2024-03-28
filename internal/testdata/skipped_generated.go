@@ -4,8 +4,6 @@ package example
 
 import (
 	"context"
-	"go.opentelemetry.io/otel"
-	"go.opentelemetry.io/otel/codes"
 )
 
 func Skip3(ctx context.Context) (name string, err error) {
