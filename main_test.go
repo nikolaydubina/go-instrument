@@ -7,17 +7,12 @@ import (
 	"testing"
 )
 
-var (
-	testbin string
-)
-
-func init() {
-	testbin := path.Join(os.TempDir(), "go-instrument-testbin")
-	exec.Command("go", "build", "-cover", "-o", testbin, "main.go").Run()
-}
-
 func FuzzBadFile(f *testing.F) {
+	testbin := path.Join(f.TempDir(), "go-instrument-testbin")
+	exec.Command("go", "build", "-cover", "-o", testbin, "main.go").Run()
+
 	f.Fuzz(func(t *testing.T, orig string) {
+
 		t.Run("when bad go file, then error", func(t *testing.T) {
 			fname := path.Join(t.TempDir(), "fuzz-test-file.go")
 			os.WriteFile(fname, []byte(orig), 0644)
@@ -31,6 +26,9 @@ func FuzzBadFile(f *testing.F) {
 }
 
 func TestMain(t *testing.T) {
+	testbin := path.Join(t.TempDir(), "go-instrument-testbin")
+	exec.Command("go", "build", "-cover", "-o", testbin, "main.go").Run()
+
 	t.Run("when basic, then ok", func(t *testing.T) {
 		cmd := exec.Command(testbin, "-app", "app", "-w", "-filename", "./internal/testdata/basic.go")
 		if err := cmd.Run(); err != nil {
