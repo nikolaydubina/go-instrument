@@ -4,6 +4,7 @@ import (
 	"os"
 	"os/exec"
 	"path"
+	"strings"
 	"testing"
 	"time"
 )
@@ -19,6 +20,7 @@ func FuzzBadFile(f *testing.F) {
 			os.WriteFile(fname, []byte(orig), 0644)
 
 			cmd := exec.Command(testbin, "-app", "app", "-w", "-filename", fname)
+			cmd.Env = append(cmd.Environ(), "GOCOVERDIR=./coverage")
 			if err := cmd.Run(); err == nil {
 				t.Fatal(err)
 			}
@@ -51,10 +53,14 @@ func TestMain(t *testing.T) {
 	})
 
 	t.Run("when generated file, then err", func(t *testing.T) {
-		cmd := exec.Command(testbin, "-app", "app", "-w", "-skip-generated", "true", "-filename", "./internal/testdata/skipped_generated.go")
+		cmd := exec.Command(testbin, "-app", "app", "-w", "-skip-generated=true", "-filename", "./internal/testdata/skipped_generated.go")
 		cmd.Env = append(cmd.Environ(), "GOCOVERDIR=./coverage")
-		if err := cmd.Run(); err == nil {
+		out, err := cmd.CombinedOutput()
+		if err == nil {
 			t.Errorf("expected exit code 1")
+		}
+		if !strings.Contains(string(out), "skipping generated file") {
+			t.Errorf("expected skipping generated file")
 		}
 	})
 
@@ -68,6 +74,22 @@ func TestMain(t *testing.T) {
 
 	t.Run("when non go file, then err", func(t *testing.T) {
 		cmd := exec.Command(testbin, "-filename", "README.md")
+		cmd.Env = append(cmd.Environ(), "GOCOVERDIR=./coverage")
+		if err := cmd.Run(); err == nil {
+			t.Errorf("expected exit code 1")
+		}
+	})
+
+	t.Run("when non filename, then err", func(t *testing.T) {
+		cmd := exec.Command(testbin)
+		cmd.Env = append(cmd.Environ(), "GOCOVERDIR=./coverage")
+		if err := cmd.Run(); err == nil {
+			t.Errorf("expected exit code 1")
+		}
+	})
+
+	t.Run("when can not parse commands, then err", func(t *testing.T) {
+		cmd := exec.Command(testbin, "-app", "app", "-w", "-all=false", "-filename", "./internal/testdata/error_unkonwn_command.go")
 		cmd.Env = append(cmd.Environ(), "GOCOVERDIR=./coverage")
 		if err := cmd.Run(); err == nil {
 			t.Errorf("expected exit code 1")
