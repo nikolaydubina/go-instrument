@@ -20,6 +20,7 @@ func FuzzBadFile(f *testing.F) {
 			os.WriteFile(fname, []byte(orig), 0644)
 
 			cmd := exec.Command(testbin, "-app", "app", "-w", "-filename", fname)
+			cmd.Env = append(cmd.Environ(), "GOCOVERDIR=./coverage")
 			if err := cmd.Run(); err == nil {
 				t.Fatal(err)
 			}
