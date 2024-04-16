@@ -3,7 +3,7 @@ package example
 import (
 	"context"
 	"go.opentelemetry.io/otel"
-	"go.opentelemetry.io/otel/codes"
+	otelCodes "go.opentelemetry.io/otel/codes"
 )
 
 func AnonymousFuncWithoutContext() func() (name string, err error) {
@@ -18,7 +18,7 @@ func AnonymousFunc() func(ctx context.Context) (name string, err error) {
 		defer span.End()
 		defer func() {
 			if err != nil {
-				span.SetStatus(codes.Error, "error")
+				span.SetStatus(otelCodes.Error, "error")
 				span.RecordError(err)
 			}
 		}()
@@ -43,7 +43,7 @@ func (s Cat) Name(ctx context.Context) (name string, err error) {
 	defer span.End()
 	defer func() {
 		if err != nil {
-			span.SetStatus(codes.Error, "error")
+			span.SetStatus(otelCodes.Error, "error")
 			span.RecordError(err)
 		}
 	}()
@@ -58,7 +58,7 @@ func (s *Apple) MethodWithPointerReciver(ctx context.Context, a int) (err error)
 	defer span.End()
 	defer func() {
 		if err != nil {
-			span.SetStatus(codes.Error, "error")
+			span.SetStatus(otelCodes.Error, "error")
 			span.RecordError(err)
 		}
 	}()
@@ -71,7 +71,7 @@ func (s Apple) MethodWithValueReciver(ctx context.Context, a int) (err error) {
 	defer span.End()
 	defer func() {
 		if err != nil {
-			span.SetStatus(codes.Error, "error")
+			span.SetStatus(otelCodes.Error, "error")
 			span.RecordError(err)
 		}
 	}()
@@ -84,7 +84,7 @@ func (*Apple) MethodWithPointerReciverUnnamed(ctx context.Context, a int) (err e
 	defer span.End()
 	defer func() {
 		if err != nil {
-			span.SetStatus(codes.Error, "error")
+			span.SetStatus(otelCodes.Error, "error")
 			span.RecordError(err)
 		}
 	}()
@@ -97,7 +97,7 @@ func (Apple) MethodWithValueReciverUnnamed(ctx context.Context, a int) (err erro
 	defer span.End()
 	defer func() {
 		if err != nil {
-			span.SetStatus(codes.Error, "error")
+			span.SetStatus(otelCodes.Error, "error")
 			span.RecordError(err)
 		}
 	}()
@@ -123,7 +123,7 @@ func Basic(ctx context.Context) (err error) {
 	defer span.End()
 	defer func() {
 		if err != nil {
-			span.SetStatus(codes.Error, "error")
+			span.SetStatus(otelCodes.Error, "error")
 			span.RecordError(err)
 		}
 	}()

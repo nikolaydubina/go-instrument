@@ -3,13 +3,14 @@ package processor
 import (
 	"go/ast"
 	"go/token"
+	"go/types"
 
 	"golang.org/x/tools/go/ast/astutil"
 )
 
 // Instrumenter supplies ast of Go code that will be inserted and required dependencies.
 type Instrumenter interface {
-	Imports() []string
+	Imports() []*types.Package
 	PrefixStatements(spanName string, hasError bool) []ast.Stmt
 }
 
@@ -188,8 +189,8 @@ func (p *Processor) Process(fset *token.FileSet, file *ast.File) error {
 			return err
 		}
 
-		for _, q := range p.Instrumenter.Imports() {
-			astutil.AddImport(fset, file, q)
+		for _, pkg := range p.Instrumenter.Imports() {
+			astutil.AddNamedImport(fset, file, pkg.Name(), pkg.Path())
 		}
 	}
 

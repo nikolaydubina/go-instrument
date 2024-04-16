@@ -28,7 +28,7 @@ func FuzzBadFile(f *testing.F) {
 	})
 }
 
-func TestMain(t *testing.T) {
+func TestApp(t *testing.T) {
 	testbin := path.Join(t.TempDir(), "go-instrument-testbin")
 	exec.Command("go", "build", "-cover", "-o", testbin, "main.go").Run()
 
