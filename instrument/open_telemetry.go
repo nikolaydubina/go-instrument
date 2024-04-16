@@ -3,6 +3,7 @@ package instrument
 import (
 	"go/ast"
 	"go/token"
+	"go/types"
 )
 
 type OpenTelemetry struct {
@@ -14,17 +15,17 @@ type OpenTelemetry struct {
 	hasError   bool
 }
 
-func (s *OpenTelemetry) Imports() []string {
+func (s *OpenTelemetry) Imports() []*types.Package {
 	if !s.hasInserts {
 		return nil
 	}
-	pkg := []string{
-		"go.opentelemetry.io/otel",
+	pkgs := []*types.Package{
+		types.NewPackage("go.opentelemetry.io/otel", ""),
 	}
 	if s.hasError {
-		pkg = append(pkg, "go.opentelemetry.io/otel/codes")
+		pkgs = append(pkgs, types.NewPackage("go.opentelemetry.io/otel/codes", "otelCodes"))
 	}
-	return pkg
+	return pkgs
 }
 
 func (s *OpenTelemetry) PrefixStatements(spanName string, hasError bool) []ast.Stmt {
@@ -72,7 +73,7 @@ func (s *OpenTelemetry) exprFuncSetSpanError(errorName string) ast.Expr {
 					&ast.ExprStmt{X: &ast.CallExpr{
 						Fun: &ast.SelectorExpr{X: &ast.Ident{Name: "span"}, Sel: &ast.Ident{Name: "SetStatus"}},
 						Args: []ast.Expr{
-							&ast.SelectorExpr{X: &ast.Ident{Name: "codes"}, Sel: &ast.Ident{Name: "Error"}},
+							&ast.SelectorExpr{X: &ast.Ident{Name: "otelCodes"}, Sel: &ast.Ident{Name: "Error"}},
 							&ast.BasicLit{Kind: token.STRING, Value: `"error"`},
 						},
 					}},

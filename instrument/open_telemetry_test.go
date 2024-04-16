@@ -32,12 +32,12 @@ func TestOpenTelemetry_Error(t *testing.T) {
 	}
 
 	expImports := map[string]bool{
-		"go.opentelemetry.io/otel":       true,
-		"go.opentelemetry.io/otel/codes": true,
+		"go.opentelemetry.io/otel ":                true,
+		"go.opentelemetry.io/otel/codes otelCodes": true,
 	}
 	imports := p.Imports()
-	for _, q := range imports {
-		if !expImports[q] {
+	for _, pkg := range imports {
+		if !expImports[pkg.Path()+" "+pkg.Name()] {
 			t.Errorf("wrong import")
 		}
 	}
@@ -64,8 +64,8 @@ func TestOpenTelemetry(t *testing.T) {
 		"go.opentelemetry.io/otel": true,
 	}
 	imports := p.Imports()
-	for _, q := range imports {
-		if !expImports[q] {
+	for _, pkg := range imports {
+		if !expImports[pkg.Path()+pkg.Name()] {
 			t.Errorf("wrong import")
 		}
 	}
