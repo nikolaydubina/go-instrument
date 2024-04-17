@@ -6,6 +6,7 @@ import (
 	"go/format"
 	"go/parser"
 	"go/token"
+	"sort"
 )
 
 type patch struct {
@@ -14,6 +15,10 @@ type patch struct {
 }
 
 func patchFile(fset *token.FileSet, file *ast.File, patches ...patch) error {
+	// Patches must be applied in the ascending order, otherwise the
+	// modified source file will become corrupted.
+	sort.Slice(patches, func(i, j int) bool { return patches[i].pos < patches[j].pos })
+
 	src, err := formatNodeToBytes(fset, file)
 	if err != nil {
 		return err
