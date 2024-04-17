@@ -4,6 +4,7 @@ import (
 	"go/ast"
 	"go/token"
 	"go/types"
+	"sort"
 
 	"golang.org/x/tools/go/ast/astutil"
 )
@@ -185,6 +186,10 @@ func (p *Processor) Process(fset *token.FileSet, file *ast.File) error {
 	})
 
 	if len(patches) > 0 {
+		// Patches must be applied in the ascending order, otherwise the
+		// modified source file will become corrupted.
+		sort.Slice(patches, func(i, j int) bool { return patches[i].pos < patches[j].pos })
+
 		if err := patchFile(fset, file, patches...); err != nil {
 			return err
 		}

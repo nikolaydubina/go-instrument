@@ -219,3 +219,25 @@ func Closure(ctx context.Context) (int, error) {
 	a := func(x int) (int, error) { return x + 1, nil }
 	return a(5)
 }
+
+func FunctionCallingAnonymousFunc(ctx context.Context) error {
+	ctx, span := otel.Tracer("app").Start(ctx, "FunctionCallingAnonymousFunc")
+	defer span.End()
+
+	if err := Exec(ctx, func(ctx context.Context) error {
+		ctx, span := otel.Tracer("app").Start(ctx, "anonymous")
+		defer span.End()
+
+		return nil
+	}); err != nil {
+		return err
+	}
+	return nil
+}
+
+func Exec(ctx context.Context, fn func(ctx context.Context) error) error {
+	ctx, span := otel.Tracer("app").Start(ctx, "Exec")
+	defer span.End()
+
+	return fn(ctx)
+}

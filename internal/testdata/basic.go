@@ -128,3 +128,16 @@ func Closure(ctx context.Context) (int, error) {
 	a := func(x int) (int, error) { return x + 1, nil }
 	return a(5)
 }
+
+func FunctionCallingAnonymousFunc(ctx context.Context) error {
+	if err := Exec(ctx, func(ctx context.Context) error {
+		return nil
+	}); err != nil {
+		return err
+	}
+	return nil
+}
+
+func Exec(ctx context.Context, fn func(ctx context.Context) error) error {
+	return fn(ctx)
+}
