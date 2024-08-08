@@ -52,12 +52,12 @@ func TestApp(t *testing.T) {
 		assertEqFile(t, "./internal/testdata/instrumented/basic_include_only.go.exp", f)
 	})
 
-	t.Run("when generated file, then err", func(t *testing.T) {
+	t.Run("when generated file, then ok", func(t *testing.T) {
 		cmd := exec.Command(testbin, "-app", "app", "-w", "-skip-generated=true", "-filename", "./internal/testdata/skipped_generated.go")
 		cmd.Env = append(cmd.Environ(), "GOCOVERDIR=./coverage")
 		out, err := cmd.CombinedOutput()
-		if err == nil {
-			t.Errorf("expected exit code 1")
+		if err != nil {
+			t.Errorf(err.Error())
 		}
 		if !strings.Contains(string(out), "skipping generated file") {
 			t.Errorf("expected skipping generated file")

@@ -8,6 +8,7 @@ import (
 	"go/parser"
 	"go/token"
 	"io"
+	"log"
 	"os"
 
 	"github.com/nikolaydubina/go-instrument/instrument"
@@ -57,7 +58,8 @@ func process(fileName, app string, overwrite, defaultSelect, skipGenerated bool)
 		return err
 	}
 	if skipGenerated && ast.IsGenerated(file) {
-		return errors.New("skipping generated file")
+		log.Printf("skipping generated file: %s\n", fileName)
+		return nil
 	}
 
 	directives := processor.GoBuildDirectivesFromFile(*file)
