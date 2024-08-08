@@ -58,7 +58,7 @@ func process(fileName, app string, overwrite, defaultSelect, skipGenerated bool)
 		return err
 	}
 	if skipGenerated && ast.IsGenerated(file) {
-		log.Printf("skipping generated file: %s\r\n", fileName)
+		log.Printf("skipping generated file: %s\n", fileName)
 		return nil
 	}
 
