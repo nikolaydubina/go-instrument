@@ -13,41 +13,33 @@ jobs:
     name: Tests
     runs-on: ubuntu-latest
     steps:
-      - name: Set up Go 1.x
-        uses: actions/setup-go@0c52d547c9bc32b1aa3301fd7a9cb496313a4491 # v5.0.0
+      - name: code
+        uses: actions/checkout@v4
+    
+      - name: go
+        uses: actions/setup-go@v5
         with:
           go-version: ^1.22
 
-      - name: Check out code into the Go module directory
-        uses: actions/checkout@93ea575cb5d8a053eaa0ac8fa3b40d7e05a33cc8 # v3.1.0
-        with:
-          persist-credentials: false
-
-      - name: Get dependencies
+      - name: tests
         run: |
-          export PATH=$PATH:$(go env GOPATH)/bin
-          go mod download
-
-      - name: Test
-        run: |
+          go get -v -t -d ./...
           mkdir ./coverage
           go install github.com/jstemmer/go-junit-report/v2@latest
           go test -coverprofile=./coverage/coverage.out -cover -json -v ./... 2>&1 | go-junit-report -set-exit-code > tests.xml 
           go tool covdata textfmt -i=./coverage -o coverage.out
 
-      - name: Fuzz
-        run: go test -fuzz=FuzzBadFile -fuzztime=5s .
+      - name: fuzz
+        run: go test -list . | grep Fuzz | xargs -P 8 -I {} go test -fuzz {} -fuzztime 5s .
 
       - name: Upload test results to Codecov
-        if: ${{ !cancelled() }}
         uses: codecov/test-results-action@v1
         with:
-          files: tests.xml
           token: ${{ secrets.CODECOV_TOKEN }}
+          files: tests.xml
 
       - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@c16abc29c95fcf9174b58eb7e1abf4c866893bc8 # v4.1.1
+        uses: codecov/codecov-action@v4.1.1
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
           files: coverage.out
-          verbose: true
