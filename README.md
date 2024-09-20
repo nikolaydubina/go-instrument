@@ -8,7 +8,7 @@
 [![Mentioned in Awesome Go](https://awesome.re/mentioned-badge.svg)](https://github.com/avelino/awesome-go#performance)
 [![go-recipes](https://raw.githubusercontent.com/nikolaydubina/go-recipes/main/badge.svg?raw=true)](https://github.com/nikolaydubina/go-recipes)
 [![OpenSSF Scorecard](https://api.securityscorecards.dev/projects/github.com/nikolaydubina/go-instrument/badge)](https://securityscorecards.dev/viewer/?uri=github.com/nikolaydubina/go-instrument)
-[![Hits](https://hits.sh/github.com/nikolaydubina.svg?view=today-total)](https://hits.sh/github.com/nikolaydubina/)
+[![Hits](https://hits.sh/github.com/nikolaydubina/go-instrument.svg?view=today-total)](https://hits.sh/github.com/nikolaydubina/go-instrument/)
 
 This tool uses standard Go library to modify AST with instrumentation. You can add new instrumentations by defining your own `Instrumenter` and invoking `Processor` like it is done in `main`.
 
