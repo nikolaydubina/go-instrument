@@ -100,8 +100,14 @@ func TestApp(t *testing.T) {
 func assertEqFile(t *testing.T, a, b string) {
 	fa, _ := os.ReadFile(a)
 	fb, _ := os.ReadFile(b)
-	if string(fa) != string(fb) {
-		t.Errorf("files are different: %s != %s", string(fa), string(fb))
+
+	la := strings.Split(string(fa), "\n")
+	lb := strings.Split(string(fb), "\n")
+
+	for i := 0; i < len(la) && i < len(lb); i++ {
+		if la[i] != lb[i] {
+			t.Errorf("files are different at line(%d)\n%s\n%s\n", i, la[i], lb[i])
+		}
 	}
 }
 

@@ -46,6 +46,10 @@ func (Apple) MethodWithValueReciverUnnamed(ctx context.Context, a int) (err erro
 	return nil
 }
 
+func (s *Apple) MethodWithCustomErrorName(ctx context.Context, a int) (errXYZ error) {
+	return nil
+}
+
 func Fib(ctx context.Context, n int) int {
 	if n == 0 || n == 1 {
 		return 1

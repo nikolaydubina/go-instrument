@@ -7,9 +7,9 @@ import (
 )
 
 type OpenTelemetry struct {
-	TracerName  string
-	ContextName string
-	ErrorName   string
+	TracerName             string
+	ContextName            string
+	ErrorStatusDescription string
 
 	hasInserts bool
 	hasError   bool
@@ -28,7 +28,7 @@ func (s *OpenTelemetry) Imports() []*types.Package {
 	return pkgs
 }
 
-func (s *OpenTelemetry) PrefixStatements(spanName string, hasError bool) []ast.Stmt {
+func (s *OpenTelemetry) PrefixStatements(spanName string, hasError bool, errorName string) []ast.Stmt {
 	s.hasInserts = true
 	if hasError {
 		s.hasError = hasError
@@ -45,7 +45,7 @@ func (s *OpenTelemetry) PrefixStatements(spanName string, hasError bool) []ast.S
 		}},
 	}
 	if hasError {
-		stmts = append(stmts, &ast.DeferStmt{Call: &ast.CallExpr{Fun: s.exprFuncSetSpanError(s.ErrorName)}})
+		stmts = append(stmts, &ast.DeferStmt{Call: &ast.CallExpr{Fun: s.exprFuncSetSpanError(errorName)}})
 	}
 	return stmts
 }
@@ -68,13 +68,13 @@ func (s *OpenTelemetry) exprFuncSetSpanError(errorName string) ast.Expr {
 		Type: &ast.FuncType{},
 		Body: &ast.BlockStmt{List: []ast.Stmt{
 			&ast.IfStmt{
-				Cond: &ast.BinaryExpr{X: &ast.Ident{Name: "err"}, Op: token.NEQ, Y: &ast.Ident{Name: "nil"}},
+				Cond: &ast.BinaryExpr{X: &ast.Ident{Name: errorName}, Op: token.NEQ, Y: &ast.Ident{Name: "nil"}},
 				Body: &ast.BlockStmt{List: []ast.Stmt{
 					&ast.ExprStmt{X: &ast.CallExpr{
 						Fun: &ast.SelectorExpr{X: &ast.Ident{Name: "span"}, Sel: &ast.Ident{Name: "SetStatus"}},
 						Args: []ast.Expr{
 							&ast.SelectorExpr{X: &ast.Ident{Name: "otelCodes"}, Sel: &ast.Ident{Name: "Error"}},
-							&ast.BasicLit{Kind: token.STRING, Value: `"error"`},
+							&ast.BasicLit{Kind: token.STRING, Value: `"` + s.ErrorStatusDescription + `"`},
 						},
 					}},
 					&ast.ExprStmt{X: &ast.CallExpr{

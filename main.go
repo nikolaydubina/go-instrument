@@ -75,19 +75,17 @@ func process(fileName, app string, overwrite, defaultSelect, skipGenerated bool)
 	}
 	functionSelector := processor.NewMapFunctionSelectorFromCommands(defaultSelect, commands)
 
-	var instrumenter processor.Instrumenter = &instrument.OpenTelemetry{
-		TracerName:  app,
-		ContextName: "ctx",
-		ErrorName:   "err",
-	}
 	p := processor.Processor{
-		Instrumenter:     instrumenter,
+		Instrumenter: &instrument.OpenTelemetry{
+			TracerName:             app,
+			ContextName:            "ctx",
+			ErrorStatusDescription: "error",
+		},
 		FunctionSelector: functionSelector,
 		SpanName:         processor.BasicSpanName,
 		ContextName:      "ctx",
 		ContextPackage:   "context",
 		ContextType:      "Context",
-		ErrorName:        "err",
 		ErrorType:        `error`,
 	}
 

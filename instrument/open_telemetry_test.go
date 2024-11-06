@@ -18,11 +18,11 @@ var expOpenTelemetry string
 
 func TestOpenTelemetry_Error(t *testing.T) {
 	p := instrument.OpenTelemetry{
-		TracerName:  "app",
-		ContextName: "ctx",
-		ErrorName:   "err",
+		TracerName:             "app",
+		ContextName:            "ctx",
+		ErrorStatusDescription: "error",
 	}
-	c := p.PrefixStatements("myClass.MyFunction", true)
+	c := p.PrefixStatements("myClass.MyFunction", true, "err")
 
 	var out bytes.Buffer
 	printer.Fprint(&out, token.NewFileSet(), c)
@@ -47,17 +47,17 @@ func TestOpenTelemetry_Error(t *testing.T) {
 }
 func TestOpenTelemetry(t *testing.T) {
 	p := instrument.OpenTelemetry{
-		TracerName:  "app",
-		ContextName: "ctx",
-		ErrorName:   "err",
+		TracerName:             "app",
+		ContextName:            "ctx",
+		ErrorStatusDescription: "error",
 	}
-	c := p.PrefixStatements("myClass.MyFunction", false)
+	c := p.PrefixStatements("myClass.MyFunction", false, "err")
 
 	var out bytes.Buffer
 	printer.Fprint(&out, token.NewFileSet(), c)
 
 	if s := out.String(); s != expOpenTelemetry {
-		t.Errorf("%s", s)
+		t.Errorf("got(%v) != exp(%v)", s, expOpenTelemetry)
 	}
 
 	expImports := map[string]bool{

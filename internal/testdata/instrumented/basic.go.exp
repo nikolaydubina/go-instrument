@@ -105,6 +105,19 @@ func (Apple) MethodWithValueReciverUnnamed(ctx context.Context, a int) (err erro
 	return nil
 }
 
+func (s *Apple) MethodWithCustomErrorName(ctx context.Context, a int) (errXYZ error) {
+	ctx, span := otel.Tracer("app").Start(ctx, "Apple.MethodWithCustomErrorName")
+	defer span.End()
+	defer func() {
+		if errXYZ != nil {
+			span.SetStatus(otelCodes.Error, "error")
+			span.RecordError(errXYZ)
+		}
+	}()
+
+	return nil
+}
+
 func Fib(ctx context.Context, n int) int {
 	ctx, span := otel.Tracer("app").Start(ctx, "Fib")
 	defer span.End()
