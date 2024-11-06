@@ -14,7 +14,7 @@ This tool uses standard Go library to modify AST with instrumentation. You can a
 
 * No dependencies
 * 500 LOC
-* OpenTelemetry (Datadog, NewRelic, etc.)
+* OpenTelemetry
 
 ```bash
 go install github.com/nikolaydubina/go-instrument@latest
@@ -94,15 +94,17 @@ More details `go help buildconstraint` and https://pkg.go.dev/cmd/go#hdr-Build_c
 * `//go:build ignore`
 * `// +build ignore`
 
-### In Development
+### Features
 
-- [ ] Dynamic error variable name
+- [x] Keeps comments
+- [x] Dynamic error variable name
+- [ ] Dynamic ctx variable name
 - [ ] Creating error when return is not named
 - [ ] Detection if function is already instrumented
 - [ ] Span Tags arguments
 - [ ] Span Tags returns
-- [ ] Assigning `ctx` to `_` when `ctx` is not used in function (`unused assignement` linter checks issue)
-- [ ] Datadog native instrumenter
+- [ ] Changing `_` to `ctx` when it is unused
+- [ ] Mode to remove added instrumentation
 
 ## Motivation
 
