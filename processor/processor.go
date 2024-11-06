@@ -11,7 +11,7 @@ import (
 // Instrumenter supplies ast of Go code that will be inserted and required dependencies.
 type Instrumenter interface {
 	Imports() []*types.Package
-	PrefixStatements(spanName string, hasError bool) []ast.Stmt
+	PrefixStatements(spanName string, hasError bool, errName string) []ast.Stmt
 }
 
 // FunctionSelector tells if function has to be instrumented.
@@ -35,7 +35,6 @@ type Processor struct {
 	ContextName      string
 	ContextPackage   string
 	ContextType      string
-	ErrorName        string
 	ErrorType        string
 }
 
@@ -95,25 +94,20 @@ func (p *Processor) isContext(e *ast.Field) bool {
 	return pkg == p.ContextPackage && sym == p.ContextType
 }
 
-func (p *Processor) isError(e *ast.Field) bool {
+func (p *Processor) isError(e *ast.Field) (ok bool, name string) {
 	if e == nil {
-		return false
+		return false, ""
 	}
 	// anonymous arg
 	// multiple symbols
 	// strange symbol
 	if len(e.Names) != 1 || e.Names[0] == nil {
-		return false
+		return false, ""
 	}
-	if e.Names[0].Name != p.ErrorName {
-		return false
-	}
-
 	if v, ok := e.Type.(*ast.Ident); ok && v != nil {
-		return v.Name == p.ErrorType
+		return v.Name == p.ErrorType, e.Names[0].Name
 	}
-
-	return false
+	return false, ""
 }
 
 func (p *Processor) functionHasContext(fnType *ast.FuncType) bool {
@@ -132,20 +126,20 @@ func (p *Processor) functionHasContext(fnType *ast.FuncType) bool {
 	return false
 }
 
-func (p *Processor) functionHasError(fnType *ast.FuncType) bool {
+func (p *Processor) functionHasError(fnType *ast.FuncType) (ok bool, name string) {
 	if fnType == nil {
-		return false
+		return false, ""
 	}
 
 	if rs := fnType.Results; rs != nil {
 		for _, q := range rs.List {
-			if p.isError(q) {
-				return true
+			if ok, name := p.isError(q); ok {
+				return true, name
 			}
 		}
 	}
 
-	return false
+	return false, ""
 }
 
 func (p *Processor) Process(fset *token.FileSet, file *ast.File) error {
@@ -177,7 +171,8 @@ func (p *Processor) Process(fset *token.FileSet, file *ast.File) error {
 		}
 
 		if p.functionHasContext(fnType) {
-			ps := p.Instrumenter.PrefixStatements(p.SpanName(receiver, fname), p.functionHasError(fnType))
+			hasError, errorName := p.functionHasError(fnType)
+			ps := p.Instrumenter.PrefixStatements(p.SpanName(receiver, fname), hasError, errorName)
 			patches = append(patches, patch{pos: fnBody.Pos(), stmts: ps})
 		}
 
