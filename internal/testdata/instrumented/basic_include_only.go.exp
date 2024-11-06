@@ -10,13 +10,13 @@ import (
 
 type Dog struct{}
 
-func (s Dog) Bark(ctx context.Context) (name string, err error) {
+func (s Dog) Bark(ctx context.Context) (name string, errInstrument error) {
 	ctx, span := otel.Tracer("app").Start(ctx, "Dog.Bark")
 	defer span.End()
 	defer func() {
-		if err != nil {
+		if errInstrument != nil {
 			span.SetStatus(otelCodes.Error, "error")
-			span.RecordError(err)
+			span.RecordError(errInstrument)
 		}
 	}()
 

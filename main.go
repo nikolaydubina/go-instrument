@@ -17,26 +17,28 @@ import (
 
 func main() {
 	var (
-		fileName      string
-		overwrite     bool
-		app           string
-		defaultSelect bool
-		skipGenerated bool
+		fileName           string
+		overwrite          bool
+		app                string
+		defaultSelect      bool
+		skipGenerated      bool
+		addErrorNameSuffix string
 	)
 	flag.StringVar(&fileName, "filename", "", "go file to instrument")
 	flag.StringVar(&app, "app", "app", "name of application")
 	flag.BoolVar(&overwrite, "w", false, "overwrite original file")
 	flag.BoolVar(&defaultSelect, "all", true, "instrument all by default")
 	flag.BoolVar(&skipGenerated, "skip-generated", false, "skip generated files")
+	flag.StringVar(&addErrorNameSuffix, "add-error-name-suffix", "Instrument", "rename named return error name to custom string to prevent shadowing")
 	flag.Parse()
 
-	if err := process(fileName, app, overwrite, defaultSelect, skipGenerated); err != nil {
+	if err := process(fileName, app, overwrite, defaultSelect, skipGenerated, addErrorNameSuffix); err != nil {
 		os.Stderr.WriteString(err.Error())
 		os.Exit(1)
 	}
 }
 
-func process(fileName, app string, overwrite, defaultSelect, skipGenerated bool) error {
+func process(fileName, app string, overwrite, defaultSelect, skipGenerated bool, addErrorNameSuffix string) error {
 	if fileName == "" {
 		return errors.New("missing arg: file name")
 	}
@@ -81,12 +83,13 @@ func process(fileName, app string, overwrite, defaultSelect, skipGenerated bool)
 			ContextName:            "ctx",
 			ErrorStatusDescription: "error",
 		},
-		FunctionSelector: functionSelector,
-		SpanName:         processor.BasicSpanName,
-		ContextName:      "ctx",
-		ContextPackage:   "context",
-		ContextType:      "Context",
-		ErrorType:        `error`,
+		FunctionSelector:   functionSelector,
+		SpanName:           processor.BasicSpanName,
+		ContextName:        "ctx",
+		ContextPackage:     "context",
+		ContextType:        "Context",
+		ErrorType:          `error`,
+		AddErrorNameSuffix: addErrorNameSuffix,
 	}
 
 	if err := p.Process(fset, file); err != nil {

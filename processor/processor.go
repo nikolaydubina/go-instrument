@@ -29,13 +29,14 @@ func BasicSpanName(receiver, function string) string {
 
 // Processor traverses AST, collects details on functions and methods, and invokes Instrumenter
 type Processor struct {
-	Instrumenter     Instrumenter
-	FunctionSelector FunctionSelector
-	SpanName         func(receiver, function string) string
-	ContextName      string
-	ContextPackage   string
-	ContextType      string
-	ErrorType        string
+	Instrumenter       Instrumenter
+	FunctionSelector   FunctionSelector
+	SpanName           func(receiver, function string) string
+	ContextName        string
+	ContextPackage     string
+	ContextType        string
+	ErrorType          string
+	AddErrorNameSuffix string
 }
 
 func (p *Processor) methodReceiverTypeName(fn *ast.FuncDecl) string {
@@ -172,6 +173,7 @@ func (p *Processor) Process(fset *token.FileSet, file *ast.File) error {
 
 		if p.functionHasContext(fnType) {
 			hasError, errorName := p.functionHasError(fnType)
+			errorName = errorName + p.AddErrorNameSuffix
 			ps := p.Instrumenter.PrefixStatements(p.SpanName(receiver, fname), hasError, errorName)
 			patches = append(patches, patch{pos: fnBody.Pos(), stmts: ps})
 		}

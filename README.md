@@ -32,13 +32,13 @@ func (s Cat) Name(ctx context.Context) (name string, err error) {
 
 will be instrumented with span
 ```go
-func (s Cat) Name(ctx context.Context) (name string, err error) {
+func (s Cat) Name(ctx context.Context) (name string, err123 error) {
 	ctx, span := otel.Trace("my-service").Start(ctx, "Cat.Name")
 	defer span.End()
 	defer func() {
-		if err != nil {
+		if err123 != nil {
 			span.SetStatus(codes.Error, "error")
-			span.RecordError(err)
+			span.RecordError(err123)
 		}
 	}()
   ...
