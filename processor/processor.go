@@ -217,7 +217,7 @@ func (p *Processor) isFunctionInstrumented(body *ast.BlockStmt) bool {
 		return false
 	}
 	callExpr, ok := deferStmt.Call.Fun.(*ast.SelectorExpr)
-	if !ok || callExpr.Sel.Name != "End" {
+	if !ok || callExpr == nil || callExpr.Sel.Name != "End" {
 		return false
 	}
 	spanVar, ok := callExpr.X.(*ast.Ident)
