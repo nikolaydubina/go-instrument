@@ -15,3 +15,6 @@
 # vendor/
 
 go-instrument
+
+/repomix.config.json
+/repomix-output.md
