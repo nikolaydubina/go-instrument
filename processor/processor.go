@@ -202,7 +202,7 @@ func (p *Processor) isFunctionInstrumented(body *ast.BlockStmt) bool {
 
 	// Check first statement: ctx, span := otel.Tracer(...).Start(...)
 	assignStmt, ok := body.List[0].(*ast.AssignStmt)
-	if !ok || len(assignStmt.Lhs) != 2 || len(assignStmt.Rhs) != 1 {
+	if !ok || assignStmt == nil || len(assignStmt.Lhs) != 2 || len(assignStmt.Rhs) != 1 {
 		return false
 	}
 	ctxIdent, ok1 := assignStmt.Lhs[0].(*ast.Ident)
