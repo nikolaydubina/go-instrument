@@ -213,7 +213,7 @@ func (p *Processor) isFunctionInstrumented(body *ast.BlockStmt) bool {
 
 	// Check second statement: defer span.End()
 	deferStmt, ok := body.List[1].(*ast.DeferStmt)
-	if !ok {
+	if !ok || deferStmt == nil { 
 		return false
 	}
 	callExpr, ok := deferStmt.Call.Fun.(*ast.SelectorExpr)
