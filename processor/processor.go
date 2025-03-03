@@ -207,7 +207,7 @@ func (p *Processor) isFunctionInstrumented(body *ast.BlockStmt) bool {
 	}
 	ctxIdent, ok1 := assignStmt.Lhs[0].(*ast.Ident)
 	spanIdent, ok2 := assignStmt.Lhs[1].(*ast.Ident)
-	if !ok1 || !ok2 || ctxIdent.Name != p.ContextName || spanIdent.Name != "span" {
+	if !ok1 || !ok2 || ctxIdent == nil || spanIdent == nil || ctxIdent.Name != p.ContextName || spanIdent.Name != "span" {
 		return false
 	}
 
