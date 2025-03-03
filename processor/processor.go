@@ -221,5 +221,5 @@ func (p *Processor) isFunctionInstrumented(body *ast.BlockStmt) bool {
 		return false
 	}
 	spanVar, ok := callExpr.X.(*ast.Ident)
-	return ok && spanVar.Name == "span"
+	return ok && spanVar != nil && spanVar.Name == "span"
 }
