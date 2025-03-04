@@ -199,27 +199,17 @@ func (p *Processor) isFunctionInstrumented(body *ast.BlockStmt) bool {
 	if body == nil || len(body.List) < 2 {
 		return false
 	}
-
-	// Check first statement: ctx, span := otel.Tracer(...).Start(...)
+	// check first statement: ctx, span := otel.Tracer(...).Start(...)
+	// this is already strong signal that we cannot instrument further and function is being instrumented
 	assignStmt, ok := body.List[0].(*ast.AssignStmt)
 	if !ok || assignStmt == nil || len(assignStmt.Lhs) != 2 || len(assignStmt.Rhs) != 1 {
 		return false
 	}
-	ctxIdent, ok1 := assignStmt.Lhs[0].(*ast.Ident)
-	spanIdent, ok2 := assignStmt.Lhs[1].(*ast.Ident)
-	if !ok1 || !ok2 || ctxIdent == nil || spanIdent == nil || ctxIdent.Name != p.ContextName || spanIdent.Name != "span" {
+	if s, ok := assignStmt.Lhs[0].(*ast.Ident); !ok || s == nil || s.Name != p.ContextName {
 		return false
 	}
-
-	// Check second statement: defer span.End()
-	deferStmt, ok := body.List[1].(*ast.DeferStmt)
-	if !ok || deferStmt == nil { 
+	if s, ok := assignStmt.Lhs[1].(*ast.Ident); !ok || s == nil || s.Name != "span" {
 		return false
 	}
-	callExpr, ok := deferStmt.Call.Fun.(*ast.SelectorExpr)
-	if !ok || callExpr == nil || callExpr.Sel.Name != "End" {
-		return false
-	}
-	spanVar, ok := callExpr.X.(*ast.Ident)
-	return ok && spanVar != nil && spanVar.Name == "span"
+	return true
 }
