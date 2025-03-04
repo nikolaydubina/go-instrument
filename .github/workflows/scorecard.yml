@@ -17,26 +17,26 @@ jobs:
       id-token: write
 
     steps:
-      - name: "Checkout code"
-        uses: actions/checkout@93ea575cb5d8a053eaa0ac8fa3b40d7e05a33cc8 # v3.1.0
+      - name: code
+        uses: actions/checkout@latest
         with:
           persist-credentials: false
 
-      - name: "Run analysis"
-        uses: ossf/scorecard-action@0864cf19026789058feabb7e87baa5f140aac736 # v2.3.1
+      - name: analysis
+        uses: ossf/scorecard-action@latest
         with:
           results_file: results.sarif
           results_format: sarif
           publish_results: true
 
-      - name: "Upload artifact"
-        uses: actions/upload-artifact@3cea5372237819ed00197afe530f5a7ea3e805c8 # v3.1.0
+      - name: upload artifact
+        uses: actions/upload-artifact@latest
         with:
           name: SARIF file
           path: results.sarif
           retention-days: 5
 
-      - name: "Upload to code-scanning"
-        uses: github/codeql-action/upload-sarif@17573ee1cc1b9d061760f3a006fc4aac4f944fd5 # v2.2.4
+      - name: upload to code-scanning
+        uses: github/codeql-action/upload-sarif@latest
         with:
           sarif_file: results.sarif
