@@ -143,7 +143,7 @@ func TestApp_AlreadyInstrumentedFile(t *testing.T) {
 		}
 
 		newContent, _ := os.ReadFile(f)
-		if !bytes.Equal(originalContent, newContent) {
+		if cmp.Equal(originalContent, newContent) {
 			t.Errorf("File was modified despite existing instrumentation")
 		}
 	})
