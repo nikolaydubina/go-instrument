@@ -59,7 +59,7 @@ func (s *OpenTelemetry) expFuncSet(tracerName, spanName string) ast.Expr {
 			},
 			Sel: &ast.Ident{Name: "Start"},
 		},
-		Args: []ast.Expr{&ast.Ident{Name: "ctx"}, &ast.BasicLit{Kind: token.STRING, Value: `"` + spanName + `"`}},
+		Args: []ast.Expr{&ast.Ident{Name: s.ContextName}, &ast.BasicLit{Kind: token.STRING, Value: `"` + spanName + `"`}},
 	}
 }
 
