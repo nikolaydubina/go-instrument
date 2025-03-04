@@ -108,6 +108,47 @@ func TestApp(t *testing.T) {
 	})
 }
 
+func TestApp_UninstrumentedFile(t *testing.T) {
+	testbin := path.Join(t.TempDir(), "go-instrument-testbin")
+	exec.Command("go", "build", "-cover", "-o", testbin, "main.go").Run()
+
+	t.Run("when uninstrumented, injects code", func(t *testing.T) {
+		// Copy the uninstrumented test file
+		f := copyFile(t, "./internal/testdata/basic.go")
+
+		cmd := exec.Command(testbin, "-app", "app", "-w", "-filename", f)
+		cmd.Env = append(cmd.Environ(), "GOCOVERDIR=./coverage")
+		if err := cmd.Run(); err != nil {
+			t.Errorf("Unexpected error: %v", err)
+		}
+
+		// Verify the output matches the expected instrumented version
+		assertEqFile(t, "./internal/testdata/instrumented/basic.go.exp", f)
+	})
+}
+
+func TestApp_AlreadyInstrumentedFile(t *testing.T) {
+	testbin := path.Join(t.TempDir(), "go-instrument-testbin")
+	exec.Command("go", "build", "-cover", "-o", testbin, "main.go").Run()
+
+	t.Run("when already instrumented, skips injection", func(t *testing.T) {
+		// Use the already instrumented file as input
+		f := copyFile(t, "./internal/testdata/instrumented/basic.go.exp")
+		originalContent, _ := os.ReadFile(f)
+
+		cmd := exec.Command(testbin, "-app", "app", "-w", "-filename", f)
+		cmd.Env = append(cmd.Environ(), "GOCOVERDIR=./coverage")
+		if err := cmd.Run(); err != nil {
+			t.Errorf("Unexpected error: %v", err)
+		}
+
+		newContent, _ := os.ReadFile(f)
+		if !bytes.Equal(originalContent, newContent) {
+			t.Errorf("File was modified despite existing instrumentation")
+		}
+	})
+}
+
 func assertEqFile(t *testing.T, a, b string) {
 	fa, _ := os.ReadFile(a)
 	fb, _ := os.ReadFile(b)

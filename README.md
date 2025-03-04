@@ -80,10 +80,6 @@ func (s Cat) Walk(ctx context.Context) (err error) {
   ...
 ```
 
-### Comments
-
-Comments are supported through patching source files bytes and fmt.
-
 ### Go compiler directives
 
 Standard Go compiler directives are recognized.
@@ -100,7 +96,7 @@ More details `go help buildconstraint` and https://pkg.go.dev/cmd/go#hdr-Build_c
 - [x] Dynamic error variable name
 - [ ] Dynamic ctx variable name
 - [ ] Creating error when return is not named
-- [ ] Detection if function is already instrumented
+- [x] Detection if function is already instrumented
 - [ ] Span Tags arguments
 - [ ] Span Tags returns
 - [ ] Changing `_` to `ctx` when it is unused
