@@ -80,10 +80,6 @@ func (s Cat) Walk(ctx context.Context) (err error) {
   ...
 ```
 
-### Comments
-
-Comments are supported through patching source files bytes and fmt.
-
 ### Go compiler directives
 
 Standard Go compiler directives are recognized.
