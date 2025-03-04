@@ -1,6 +1,7 @@
 package main_test
 
 import (
+	"github.com/google/go-cmp/cmp"
 	"os"
 	"os/exec"
 	"path"
@@ -95,6 +96,16 @@ func TestApp(t *testing.T) {
 			t.Errorf("expected exit code 1")
 		}
 	})
+
+	t.Run("when context is in receiver", func(t *testing.T) {
+		f := copyFile(t, "./internal/testdata/file_with_context.go")
+		cmd := exec.Command(testbin, "-app", "app", "-w", "-filename", f)
+		cmd.Env = append(cmd.Environ(), "GOCOVERDIR=./coverage")
+		if err := cmd.Run(); err != nil {
+			t.Errorf("failed to run command: %v", err)
+		}
+		assertEqFile(t, "./internal/testdata/instrumented/file_with_context.go.exp", f)
+	})
 }
 
 func assertEqFile(t *testing.T, a, b string) {
@@ -106,7 +117,8 @@ func assertEqFile(t *testing.T, a, b string) {
 
 	for i := 0; i < len(la) && i < len(lb); i++ {
 		if la[i] != lb[i] {
-			t.Errorf("files are different at line(%d)\n%s\n%s\n", i, la[i], lb[i])
+			diff := cmp.Diff(la[i], lb[i])
+			t.Errorf("files are different at line(%d)\n%s\n%s\n. Diff: %s", i, la[i], lb[i], diff)
 		}
 	}
 }
