@@ -171,6 +171,10 @@ func (p *Processor) Process(fset *token.FileSet, file *ast.File) error {
 		}
 
 		if p.functionHasContext(fnType) {
+			if p.isFunctionInstrumented(fnBody) {
+				return true
+			}
+
 			hasError, errorName := p.functionHasError(fnType)
 			ps := p.Instrumenter.PrefixStatements(p.SpanName(receiver, fname), hasError, errorName)
 			patches = append(patches, patch{pos: fnBody.Pos(), stmts: ps})
@@ -189,4 +193,33 @@ func (p *Processor) Process(fset *token.FileSet, file *ast.File) error {
 	}
 
 	return nil
+}
+
+func (p *Processor) isFunctionInstrumented(body *ast.BlockStmt) bool {
+	if body == nil || len(body.List) < 2 {
+		return false
+	}
+
+	// Check first statement: ctx, span := otel.Tracer(...).Start(...)
+	assignStmt, ok := body.List[0].(*ast.AssignStmt)
+	if !ok || assignStmt == nil || len(assignStmt.Lhs) != 2 || len(assignStmt.Rhs) != 1 {
+		return false
+	}
+	ctxIdent, ok1 := assignStmt.Lhs[0].(*ast.Ident)
+	spanIdent, ok2 := assignStmt.Lhs[1].(*ast.Ident)
+	if !ok1 || !ok2 || ctxIdent == nil || spanIdent == nil || ctxIdent.Name != p.ContextName || spanIdent.Name != "span" {
+		return false
+	}
+
+	// Check second statement: defer span.End()
+	deferStmt, ok := body.List[1].(*ast.DeferStmt)
+	if !ok || deferStmt == nil { 
+		return false
+	}
+	callExpr, ok := deferStmt.Call.Fun.(*ast.SelectorExpr)
+	if !ok || callExpr == nil || callExpr.Sel.Name != "End" {
+		return false
+	}
+	spanVar, ok := callExpr.X.(*ast.Ident)
+	return ok && spanVar != nil && spanVar.Name == "span"
 }
