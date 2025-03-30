@@ -1,6 +1,7 @@
 package main_test
 
 import (
+	"bytes"
 	"os"
 	"os/exec"
 	"path"
@@ -37,7 +38,7 @@ func TestApp(t *testing.T) {
 		cmd := exec.Command(testbin, "-app", "app", "-w", "-filename", f)
 		cmd.Env = append(cmd.Environ(), "GOCOVERDIR=./coverage")
 		if err := cmd.Run(); err != nil {
-			t.Errorf(err.Error())
+			t.Error(err)
 		}
 		assertEqFile(t, "./internal/testdata/instrumented/basic.go.exp", f)
 	})
@@ -47,7 +48,7 @@ func TestApp(t *testing.T) {
 		cmd := exec.Command(testbin, "-app", "app", "-w", "-all=false", "-filename", f)
 		cmd.Env = append(cmd.Environ(), "GOCOVERDIR=./coverage")
 		if err := cmd.Run(); err != nil {
-			t.Errorf(err.Error())
+			t.Error(err)
 		}
 		assertEqFile(t, "./internal/testdata/instrumented/basic_include_only.go.exp", f)
 	})
@@ -57,7 +58,7 @@ func TestApp(t *testing.T) {
 		cmd.Env = append(cmd.Environ(), "GOCOVERDIR=./coverage")
 		out, err := cmd.CombinedOutput()
 		if err != nil {
-			t.Errorf(err.Error())
+			t.Error(err)
 		}
 		if !strings.Contains(string(out), "skipping generated file") {
 			t.Errorf("expected skipping generated file")
@@ -93,6 +94,22 @@ func TestApp(t *testing.T) {
 		cmd.Env = append(cmd.Environ(), "GOCOVERDIR=./coverage")
 		if err := cmd.Run(); err == nil {
 			t.Errorf("expected exit code 1")
+		}
+	})
+
+	t.Run("when already instrumented, then do not instrument", func(t *testing.T) {
+		f := copyFile(t, "./internal/testdata/instrumented/basic.go.exp")
+		originalContent, _ := os.ReadFile(f)
+
+		cmd := exec.Command(testbin, "-app", "app", "-w", "-filename", f)
+		cmd.Env = append(cmd.Environ(), "GOCOVERDIR=./coverage")
+		if err := cmd.Run(); err != nil {
+			t.Error(err)
+		}
+
+		newContent, _ := os.ReadFile(f)
+		if !bytes.Equal(originalContent, newContent) {
+			t.Error("file was modified despite existing instrumentation")
 		}
 	})
 }

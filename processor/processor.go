@@ -171,6 +171,10 @@ func (p *Processor) Process(fset *token.FileSet, file *ast.File) error {
 		}
 
 		if p.functionHasContext(fnType) {
+			if p.isFunctionInstrumented(fnBody) {
+				return true
+			}
+
 			hasError, errorName := p.functionHasError(fnType)
 			ps := p.Instrumenter.PrefixStatements(p.SpanName(receiver, fname), hasError, errorName)
 			patches = append(patches, patch{pos: fnBody.Pos(), stmts: ps})
@@ -189,4 +193,23 @@ func (p *Processor) Process(fset *token.FileSet, file *ast.File) error {
 	}
 
 	return nil
+}
+
+func (p *Processor) isFunctionInstrumented(body *ast.BlockStmt) bool {
+	if body == nil || len(body.List) < 2 {
+		return false
+	}
+	// check first statement: ctx, span := otel.Tracer(...).Start(...)
+	// this is already strong signal that we cannot instrument further and function is being instrumented
+	assignStmt, ok := body.List[0].(*ast.AssignStmt)
+	if !ok || assignStmt == nil || len(assignStmt.Lhs) != 2 || len(assignStmt.Rhs) != 1 {
+		return false
+	}
+	if s, ok := assignStmt.Lhs[0].(*ast.Ident); !ok || s == nil || s.Name != p.ContextName {
+		return false
+	}
+	if s, ok := assignStmt.Lhs[1].(*ast.Ident); !ok || s == nil || s.Name != "span" {
+		return false
+	}
+	return true
 }
