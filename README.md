@@ -55,8 +55,6 @@ You can add new instrumentations by defining your own `Instrumenter` and invokin
 - [x] dynamic variable name
 - [ ] creating error when return is not named
 - [x] detection if function is already instrumented
-- [ ] span Tags arguments
-- [ ] span Tags returns
 - [ ] changing `_` to `ctx` when it is unused
 - [ ] mode to remove added instrumentation
 
