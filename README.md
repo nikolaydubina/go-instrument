@@ -117,7 +117,7 @@ internal/testdata/basic.go:132:6: cannot inline OneLineTypical: unhandled op DEF
 
 ## ADR
 
-- `2025-05-11` not using commands like `//instrument:exclude` because: practice this tool is used to instrument everything; there is still mechanism to exclude whole file; there is already automatic detection of instrumented functions. therefore, to simplify not using commands.
+- `2025-05-11` not using commands like `//instrument:exclude` because: in practice this tool is used to instrument everything; there is still mechanism to exclude whole file; there is already automatic detection of instrumented functions. therefore, to simplify not using commands.
 
 ## Appendix A: Related Work
 
