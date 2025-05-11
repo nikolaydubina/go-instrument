@@ -11,7 +11,7 @@ import (
 // Instrumenter supplies ast of Go code that will be inserted and required dependencies.
 type Instrumenter interface {
 	Imports() []*types.Package
-	PrefixStatements(spanName string, hasError bool, errName string) []ast.Stmt
+	PrefixStatements(spanName string, contextName string, hasError bool, errName string) []ast.Stmt
 }
 
 // BasicSpanName is common notation of <class>.<method> or <pkg>.<func>
@@ -24,12 +24,10 @@ func BasicSpanName(receiver, function string) string {
 
 // Processor traverses AST, collects details on functions and methods, and invokes Instrumenter
 type Processor struct {
-	Instrumenter   Instrumenter
-	SpanName       func(receiver, function string) string
-	ContextName    string
-	ContextPackage string
-	ContextType    string
-	ErrorType      string
+	Instrumenter                Instrumenter
+	SpanName                    func(receiver, function string) string
+	ContextPackage, ContextType string // context is detected automatically based on matching package and symbol name
+	ErrorType                   string // error is detected by error type
 }
 
 func (p *Processor) methodReceiverTypeName(fn *ast.FuncDecl) string {
@@ -62,15 +60,12 @@ func (p *Processor) functionName(fn *ast.FuncDecl) string {
 	return fn.Name.Name
 }
 
-func (p *Processor) isContext(e *ast.Field) bool {
+func (p *Processor) contextNameFromParam(e *ast.Field) string {
 	// anonymous arg
 	// multiple symbols
 	// strange symbol
 	if e == nil || len(e.Names) != 1 || e.Names[0] == nil {
-		return false
-	}
-	if e.Names[0].Name != p.ContextName {
-		return false
+		return ""
 	}
 
 	pkg := ""
@@ -85,7 +80,27 @@ func (p *Processor) isContext(e *ast.Field) bool {
 		}
 	}
 
-	return pkg == p.ContextPackage && sym == p.ContextType
+	if pkg == p.ContextPackage && sym == p.ContextType {
+		return e.Names[0].Name
+	}
+
+	return ""
+}
+
+func (p *Processor) contextNameFromFunc(fnType *ast.FuncType) string {
+	if fnType == nil {
+		return ""
+	}
+
+	if ps := fnType.Params; ps != nil {
+		for _, q := range ps.List {
+			if contextName := p.contextNameFromParam(q); contextName != "" {
+				return contextName
+			}
+		}
+	}
+
+	return ""
 }
 
 func (p *Processor) isError(e *ast.Field) (ok bool, name string) {
@@ -102,22 +117,6 @@ func (p *Processor) isError(e *ast.Field) (ok bool, name string) {
 		return v.Name == p.ErrorType, e.Names[0].Name
 	}
 	return false, ""
-}
-
-func (p *Processor) functionHasContext(fnType *ast.FuncType) bool {
-	if fnType == nil {
-		return false
-	}
-
-	if ps := fnType.Params; ps != nil {
-		for _, q := range ps.List {
-			if p.isContext(q) {
-				return true
-			}
-		}
-	}
-
-	return false
 }
 
 func (p *Processor) functionHasError(fnType *ast.FuncType) (ok bool, name string) {
@@ -166,13 +165,13 @@ func (p *Processor) Process(fset *token.FileSet, file *ast.File) error {
 			return true
 		}
 
-		if p.functionHasContext(fnType) {
+		if contextName := p.contextNameFromFunc(fnType); contextName != "" {
 			if p.isFunctionInstrumented(fnBody) {
 				return true
 			}
 
 			hasError, errorName := p.functionHasError(fnType)
-			ps := p.Instrumenter.PrefixStatements(p.SpanName(receiver, fname), hasError, errorName)
+			ps := p.Instrumenter.PrefixStatements(p.SpanName(receiver, fname), contextName, hasError, errorName)
 			patches = append(patches, patch{pos: fnBody.Pos(), stmts: ps})
 		}
 
@@ -195,13 +194,10 @@ func (p *Processor) isFunctionInstrumented(body *ast.BlockStmt) bool {
 	if body == nil || len(body.List) < 2 {
 		return false
 	}
-	// check first statement: ctx, span := otel.Tracer(...).Start(...)
-	// this is already strong signal that we cannot instrument further and function is being instrumented
+	// check first statement is `..., span := ...`
+	// this is already a strong signal that this is likely instrumentation
 	assignStmt, ok := body.List[0].(*ast.AssignStmt)
 	if !ok || assignStmt == nil || len(assignStmt.Lhs) != 2 || len(assignStmt.Rhs) != 1 {
-		return false
-	}
-	if s, ok := assignStmt.Lhs[0].(*ast.Ident); !ok || s == nil || s.Name != p.ContextName {
 		return false
 	}
 	if s, ok := assignStmt.Lhs[1].(*ast.Ident); !ok || s == nil || s.Name != "span" {

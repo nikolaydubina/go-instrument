@@ -21,10 +21,9 @@ var expOpenTelemetry string
 func TestOpenTelemetry_Error(t *testing.T) {
 	p := instrument.OpenTelemetry{
 		TracerName:             "app",
-		ContextName:            "ctx",
 		ErrorStatusDescription: "error",
 	}
-	c := p.PrefixStatements("myClass.MyFunction", true, "err")
+	c := p.PrefixStatements("myClass.MyFunction", "ctx", true, "err")
 
 	var out bytes.Buffer
 	printer.Fprint(&out, token.NewFileSet(), c)
@@ -49,10 +48,9 @@ func TestOpenTelemetry_Error(t *testing.T) {
 func TestOpenTelemetry(t *testing.T) {
 	p := instrument.OpenTelemetry{
 		TracerName:             "app",
-		ContextName:            "ctx",
 		ErrorStatusDescription: "error",
 	}
-	c := p.PrefixStatements("myClass.MyFunction", false, "err")
+	c := p.PrefixStatements("myClass.MyFunction", "ctx", false, "err")
 
 	var out bytes.Buffer
 	printer.Fprint(&out, token.NewFileSet(), c)

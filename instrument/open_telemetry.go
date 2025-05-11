@@ -8,7 +8,6 @@ import (
 
 type OpenTelemetry struct {
 	TracerName             string
-	ContextName            string
 	ErrorStatusDescription string
 
 	hasInserts bool
@@ -28,7 +27,7 @@ func (s *OpenTelemetry) Imports() []*types.Package {
 	return pkgs
 }
 
-func (s *OpenTelemetry) PrefixStatements(spanName string, hasError bool, errorName string) []ast.Stmt {
+func (s *OpenTelemetry) PrefixStatements(spanName string, contextName string, hasError bool, errorName string) []ast.Stmt {
 	s.hasInserts = true
 	if hasError {
 		s.hasError = hasError
@@ -37,8 +36,8 @@ func (s *OpenTelemetry) PrefixStatements(spanName string, hasError bool, errorNa
 	stmts := []ast.Stmt{
 		&ast.AssignStmt{
 			Tok: token.DEFINE,
-			Lhs: []ast.Expr{&ast.Ident{Name: s.ContextName}, &ast.Ident{Name: "span"}},
-			Rhs: []ast.Expr{s.expFuncSet(s.TracerName, spanName)},
+			Lhs: []ast.Expr{&ast.Ident{Name: contextName}, &ast.Ident{Name: "span"}},
+			Rhs: []ast.Expr{s.expFuncSet(s.TracerName, spanName, contextName)},
 		},
 		&ast.DeferStmt{Call: &ast.CallExpr{
 			Fun: &ast.SelectorExpr{X: &ast.Ident{Name: "span"}, Sel: &ast.Ident{Name: "End"}},
@@ -50,7 +49,7 @@ func (s *OpenTelemetry) PrefixStatements(spanName string, hasError bool, errorNa
 	return stmts
 }
 
-func (s *OpenTelemetry) expFuncSet(tracerName, spanName string) ast.Expr {
+func (s *OpenTelemetry) expFuncSet(tracerName, spanName, contextName string) ast.Expr {
 	return &ast.CallExpr{
 		Fun: &ast.SelectorExpr{
 			X: &ast.CallExpr{
@@ -59,7 +58,7 @@ func (s *OpenTelemetry) expFuncSet(tracerName, spanName string) ast.Expr {
 			},
 			Sel: &ast.Ident{Name: "Start"},
 		},
-		Args: []ast.Expr{&ast.Ident{Name: "ctx"}, &ast.BasicLit{Kind: token.STRING, Value: `"` + spanName + `"`}},
+		Args: []ast.Expr{&ast.Ident{Name: contextName}, &ast.BasicLit{Kind: token.STRING, Value: `"` + spanName + `"`}},
 	}
 }
 

@@ -118,6 +118,19 @@ func (s *Apple) MethodWithCustomErrorName(ctx context.Context, a int) (errXYZ er
 	return nil
 }
 
+func (s *Apple) MethodWithCustomContextName(myContext context.Context, a int) (err error) {
+	myContext, span := otel.Tracer("app").Start(myContext, "Apple.MethodWithCustomContextName")
+	defer span.End()
+	defer func() {
+		if err != nil {
+			span.SetStatus(otelCodes.Error, "error")
+			span.RecordError(err)
+		}
+	}()
+
+	return nil
+}
+
 func Fib(ctx context.Context, n int) int {
 	ctx, span := otel.Tracer("app").Start(ctx, "Fib")
 	defer span.End()
@@ -178,10 +191,28 @@ func OneLineTypical(ctx context.Context, n int) (int, error) {
 func OneLineWithComment() int { /* comment 1 */ return 42 /* comment 2 */ }
 
 func CustomName(b int, specialCtx context.Context) (specialErr error) {
+	specialCtx, span := otel.Tracer("app").Start(specialCtx, "CustomName")
+	defer span.End()
+	defer func() {
+		if specialErr != nil {
+			span.SetStatus(otelCodes.Error, "error")
+			span.RecordError(specialErr)
+		}
+	}()
+
 	return nil
 }
 
 func MultipleContextMultipleError(a context.Context, b context.Context) (erra error, errorb error) {
+	a, span := otel.Tracer("app").Start(a, "MultipleContextMultipleError")
+	defer span.End()
+	defer func() {
+		if erra != nil {
+			span.SetStatus(otelCodes.Error, "error")
+			span.RecordError(erra)
+		}
+	}()
+
 	return nil, nil
 }
 

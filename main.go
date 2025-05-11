@@ -61,11 +61,9 @@ func process(fileName, app string, overwrite, skipGenerated bool) error {
 	p := processor.Processor{
 		Instrumenter: &instrument.OpenTelemetry{
 			TracerName:             app,
-			ContextName:            "ctx",
 			ErrorStatusDescription: "error",
 		},
 		SpanName:       processor.BasicSpanName,
-		ContextName:    "ctx",
 		ContextPackage: "context",
 		ContextType:    "Context",
 		ErrorType:      `error`,
