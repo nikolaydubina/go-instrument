@@ -5,6 +5,8 @@ import (
 	_ "embed"
 	"go/printer"
 	"go/token"
+	"go/types"
+	"maps"
 	"testing"
 
 	"github.com/nikolaydubina/go-instrument/instrument"
@@ -28,23 +30,22 @@ func TestOpenTelemetry_Error(t *testing.T) {
 	printer.Fprint(&out, token.NewFileSet(), c)
 
 	if s := out.String(); s != expOpenTelemetryError {
-		t.Errorf("%s", s)
+		t.Error(s)
 	}
 
-	expImports := map[string]bool{
+	imports := p.Imports()
+
+	expImportPaths := map[string]bool{
 		"go.opentelemetry.io/otel ":                true,
 		"go.opentelemetry.io/otel/codes otelCodes": true,
 	}
-	imports := p.Imports()
-	for _, pkg := range imports {
-		if !expImports[pkg.Path()+" "+pkg.Name()] {
-			t.Errorf("wrong import")
-		}
-	}
-	if len(imports) != len(expImports) {
-		t.Error("wrong imports")
+	importPaths := importPathsFromImports(imports)
+
+	if !maps.Equal(expImportPaths, importPaths) {
+		t.Error(importPaths)
 	}
 }
+
 func TestOpenTelemetry(t *testing.T) {
 	p := instrument.OpenTelemetry{
 		TracerName:             "app",
@@ -57,19 +58,25 @@ func TestOpenTelemetry(t *testing.T) {
 	printer.Fprint(&out, token.NewFileSet(), c)
 
 	if s := out.String(); s != expOpenTelemetry {
-		t.Errorf("got(%v) != exp(%v)", s, expOpenTelemetry)
+		t.Error(s)
 	}
 
-	expImports := map[string]bool{
-		"go.opentelemetry.io/otel": true,
-	}
 	imports := p.Imports()
+
+	expImportPaths := map[string]bool{
+		"go.opentelemetry.io/otel ": true,
+	}
+	importPaths := importPathsFromImports(imports)
+
+	if !maps.Equal(expImportPaths, importPaths) {
+		t.Error(importPaths)
+	}
+}
+
+func importPathsFromImports(imports []*types.Package) map[string]bool {
+	importPaths := make(map[string]bool, len(imports))
 	for _, pkg := range imports {
-		if !expImports[pkg.Path()+pkg.Name()] {
-			t.Errorf("wrong import")
-		}
+		importPaths[pkg.Path()+" "+pkg.Name()] = true
 	}
-	if len(imports) != len(expImports) {
-		t.Error("wrong imports")
-	}
+	return importPaths
 }

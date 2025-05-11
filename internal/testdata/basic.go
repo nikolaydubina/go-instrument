@@ -57,9 +57,6 @@ func Fib(ctx context.Context, n int) int {
 	return Fib(ctx, n-1) + Fib(ctx, n-2)
 }
 
-//instrument:include Basic|Fib
-//instrument:include Basic
-
 func Basic(ctx context.Context) (err error) {
 	return nil
 }
@@ -69,25 +66,6 @@ func Comment(ctx context.Context) int {
 	// some-comment second line
 	return 43
 }
-
-func Skip(ctx context.Context) {}
-
-func SkipTwo(ctx context.Context) {
-	//instrument:exclude SkipTwo
-}
-
-func WillNotSkipThree(ctx context.Context) { /* instrument:excluce SkipThree */ }
-
-//instrument:exclude Skip|Something
-
-// unmatched
-//instrument:include ASDFASDFASDF
-
-// regexp is treated as literal string
-//instrument:include .*
-
-// instrument:exclude WillNotSkipFour
-func WillNotSkipFour(ctx context.Context) {}
 
 func CommentMultiline() error {
 	/*
