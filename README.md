@@ -52,11 +52,11 @@ You can add new instrumentations by defining your own `Instrumenter` and invokin
 - [x] functions that have named error return will get spans with span status set to error
 - [x] keeps comments
 - [x] Go build constraints[^1]
-- [x] dynamic variable name
-- [ ] creating error when return is not named
 - [x] detection if function is already instrumented
-- [ ] changing `_` to `ctx` when it is unused
-- [ ] mode to remove added instrumentation
+- [x] dynamic variable name
+- [ ] chaning un-named error return to named error return 
+- [ ] changing `_` to `ctx`
+- [ ] remove added instrumentation
 
 ## Motivation
 
