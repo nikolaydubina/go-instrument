@@ -60,8 +60,8 @@ func process(fileName, app string, overwrite, skipGenerated bool) error {
 		return nil
 	}
 
-	directives := processor.GoBuildDirectivesFromFile(*file)
-	for _, q := range directives {
+	buildConstraints := processor.BuildConstraintsFromFile(*file)
+	for _, q := range buildConstraints {
 		if q.SkipFile() {
 			return nil
 		}

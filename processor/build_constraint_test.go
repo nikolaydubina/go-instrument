@@ -9,22 +9,21 @@ import (
 	"github.com/nikolaydubina/go-instrument/processor"
 )
 
-func TestGoBuildDirectivesFromFile(t *testing.T) {
+func TestBuildConstraintsFromFile(t *testing.T) {
 	tests := []struct {
-		fileName   string
-		directives []processor.GoBuildDirective
+		fileName string
+		vs       []processor.BuildConstraint
 	}{
 		{
 			fileName: "../internal/testdata/skipped_buildignore.go",
-			directives: []processor.GoBuildDirective{
-				processor.GoBuildIgnore,
+			vs: []processor.BuildConstraint{
 				processor.BuildIgnore,
 			},
 		},
 		{
 			fileName: "../internal/testdata/skipped_gobuildignore.go",
-			directives: []processor.GoBuildDirective{
-				processor.GoBuildIgnore,
+			vs: []processor.BuildConstraint{
+				processor.BuildIgnore,
 			},
 		},
 	}
@@ -36,27 +35,27 @@ func TestGoBuildDirectivesFromFile(t *testing.T) {
 				t.Error(err)
 			}
 
-			directives := processor.GoBuildDirectivesFromFile(*f)
+			vs := processor.BuildConstraintsFromFile(*f)
 
-			if !slices.Equal(directives, tc.directives) {
-				t.Error(directives)
+			if !slices.Equal(vs, tc.vs) {
+				t.Error(vs, tc.vs)
 			}
 		})
 	}
 }
 
-func TestParseGoBuildDirective(t *testing.T) {
+func TestParseBuildConstraint(t *testing.T) {
 	tests := []struct {
 		s string
-		v processor.GoBuildDirective
+		v processor.BuildConstraint
 	}{
 		{
 			s: "//go:build ignore",
-			v: processor.GoBuildIgnore,
+			v: processor.BuildIgnore,
 		},
 		{
 			s: "//go:build exclude",
-			v: processor.GoBuildExclude,
+			v: processor.BuildExclude,
 		},
 		{
 			s: "// +build ignore",
@@ -69,11 +68,11 @@ func TestParseGoBuildDirective(t *testing.T) {
 		// whitespace
 		{
 			s: "//go:build    ignore   ",
-			v: processor.GoBuildIgnore,
+			v: processor.BuildIgnore,
 		},
 		{
 			s: "//go:build     exclude    ",
-			v: processor.GoBuildExclude,
+			v: processor.BuildExclude,
 		},
 		{
 			s: "//    +build    ignore    ",
@@ -86,7 +85,7 @@ func TestParseGoBuildDirective(t *testing.T) {
 	}
 	for _, tc := range tests {
 		t.Run(tc.s, func(t *testing.T) {
-			if v := processor.ParseGoBuildDirective(tc.s); v != tc.v {
+			if v := processor.ParseBuildConstraint(tc.s); v != tc.v {
 				t.Error(v)
 			}
 		})

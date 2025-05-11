@@ -51,7 +51,7 @@ You can add new instrumentations by defining your own `Instrumenter` and invokin
 - [x] OpenTelemetry
 - [x] functions that have named error return will get spans with span status set to error
 - [x] keeps comments
-- [x] Go compiler directives[^1]
+- [x] Go build constraints[^1]
 - [x] dynamic error variable name
 - [ ] dynamic ctx variable name
 - [ ] creating error when return is not named
