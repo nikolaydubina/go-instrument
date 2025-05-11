@@ -10,11 +10,8 @@
 [![OpenSSF Scorecard](https://api.securityscorecards.dev/projects/github.com/nikolaydubina/go-instrument/badge)](https://securityscorecards.dev/viewer/?uri=github.com/nikolaydubina/go-instrument)
 [![Hits](https://hits.sh/github.com/nikolaydubina/go-instrument.svg?view=today-total)](https://hits.sh/github.com/nikolaydubina/go-instrument/)
 
-This tool uses standard Go library to modify AST with instrumentation. You can add new instrumentations by defining your own `Instrumenter` and invoking `Processor` like it is done in `main`.
-
-* no dependencies
-* 500 LOC
-* OpenTelemetry
+This tool uses standard Go library to modify AST with instrumentation.
+You can add new instrumentations by defining your own `Instrumenter` and invoking `Processor` like it is done in `main`.
 
 ```bash
 go install github.com/nikolaydubina/go-instrument@latest
@@ -49,35 +46,20 @@ Example HTTP server [go-instrument-example](https://github.com/nikolaydubina/go-
 
 ## Features
 
-- [x] Keeps comments
-- [x] Dynamic error variable name
-- [ ] Dynamic ctx variable name
-- [ ] Creating error when return is not named
-- [x] Detection if function is already instrumented
-- [ ] Span Tags arguments
-- [ ] Span Tags returns
-- [ ] Changing `_` to `ctx` when it is unused
-- [ ] Mode to remove added instrumentation
-
-### Errors
-
-Functions that have named return `err error` will get spans with appropriate status and error recorded.
-
-```go
-func (s Cat) Walk(ctx context.Context) (err error) {
-  ...
-```
-
-### Go compiler directives
-
-Standard Go compiler directives are recognized.
-More details `go help buildconstraint` and https://pkg.go.dev/cmd/go#hdr-Build_constraints.
-
-* `//go:build exclude`
-* `// +build exclude`
-* `//go:build ignore`
-* `// +build ignore`
-
+- [x] no dependencies
+- [x] 500 LOC
+- [x] OpenTelemetry
+- [x] functions that have named error return will get spans with span status set to error
+- [x] keeps comments
+- [x] Go compiler directives[^1]
+- [x] dynamic error variable name
+- [ ] dynamic ctx variable name
+- [ ] creating error when return is not named
+- [x] detection if function is already instrumented
+- [ ] span Tags arguments
+- [ ] span Tags returns
+- [ ] changing `_` to `ctx` when it is unused
+- [ ] mode to remove added instrumentation
 
 ## Motivation
 
@@ -85,7 +67,7 @@ It is laborious to add tracing code to every function manually.
 The code repeats 99% of time.
 Other languages can either modify code or have wrapper notations that makes even manual tracing much less laborious.
 
-As of `2022-11-06`, official Go does not support automatic function traces. https://go.dev/doc/diagnostics
+As of `2025-05-11`, official Go does not support automatic function traces[^2].
 > Is there a way to automatically intercept each function call and create traces?  
 >   
 > Go doesn’t provide a way to automatically intercept every function call and create trace spans. You need to manually instrument your code to create, end, and annotate spans.
@@ -114,10 +96,6 @@ Can not inline after instrumentation
 $ go build -gcflags="-m -m" ./internal/testdata 2>&1 | grep OneLine
 internal/testdata/basic.go:132:6: cannot inline OneLineTypical: unhandled op DEFER
 ``` 
-
-## ADR
-
-- `2025-05-11` not using commands like `//instrument:exclude` because: in practice this tool is used to instrument everything; there is still mechanism to exclude whole file; there is already automatic detection of instrumented functions. therefore, to simplify not using commands.
 
 ## Appendix A: Related Work
 
@@ -237,32 +215,7 @@ async fn write(stream: &mut TcpStream) -> io::Result<usize> {
 * https://github.com/open-telemetry/opentelemetry-rust/tree/main/examples
 * https://docs.rs/datadog-apm/latest/datadog_apm
 
-## Appendix C: Paths Not Taken
-
-### eBPF
-
-With eBPF we can track latency, but we would not be able to assign errors to spans.
-Some platforms may not have access to eBPF.
-
-### Wrapping internal functions
-
-Benefit of wrapping is to keep original code without modifications.
-However, manual step for switching would still be requied.
-Given every single function is duplciated and is within same package, code will quickly become messy and hard to maintain by user.
-
-### Wrapping exported functions
-
-Typically, packages are failry big and performs lots of logic.
-Oftencase, business domains are split only in few large packages.
-Low level packages are already likely to be traced with standard tracing (MySQL, `het/http`, etc).
-Thus, it is doubtful how much benefit would be from tracing only exported functions and only on import.
-
-### Wrapping exported functions with separate package
-
-This would lead to circular dependency failure, since some even exported functions in original package may be called withing same package.
-Thus, we would either skip those calls, or fail with circular dependency while trying to wrap those.
-
-## Appendix D: Generating Many Spans
+## Appendix C: Generating Many Spans
 
 `1.97K` spans, fibbonaci
 
@@ -272,28 +225,13 @@ Thus, we would either skip those calls, or fail with circular dependency while t
 
 ![](./docs/large_tree.png)
 
-## Appendix E: Directives
+## ADR
 
-Orignal version was using `go:instrument` directive.
-However, many members of Go community raised concern that it takes over reserved core Go toolchain directives (eg, `//go:norace`).
-Even though as of `2022-11-25` Go core does not use `go:instrument`, to respect community and Go core, leaving using `//instrument:` directive instead.
+- `2025-05-11` not using commands like `//instrument:exclude` because: in practice this tool is used to instrument everything; there is still mechanism to exclude whole file; there is already automatic detection of instrumented functions. therefore, to simplify not using commands.
+- not using eBPF because: with eBPF we can track latency, but we would not be able to assign errors to spans; some platforms may not have access to eBPF;
+- not wrapping internal functions. benefit of wrapping is to keep original code without modifications. however, manual step for switching would still be requied. given every single function is duplciated and is within same package, code will quickly become messy and hard to maintain by user.
+- not wrapping exported functions. typically, packages are failry big and performs lots of logic. oftencase, business domains are split only in few large packages. low level packages are already likely to be traced with standard tracing (MySQL, `het/http`, etc). thus, it is doubtful how much benefit would be from tracing only exported functions and only on import
+- not wrapping exported functions with separate package, because this would lead to circular dependency failure, since some even exported functions in original package may be called withing same package. thus, we would either skip those calls, or fail with circular dependency while trying to wrap those.
 
-## Appendix F: Selectors
-
-One of proposed solutions for selectors was to use regex.
-
-Specifically, first usecase proposed was to use
-
-```
-//instrument:exclude .*
-//instrument:include ^API.*$
-```
-
-The issue with this is collision of two functions:
-* A) exlude all and select specific
-* B) include all and exclude specific
-
-Similarly, there is collision of subspace of functions for exclusion and inclusion.
-
-As of `2022-11-25`, @nikolaydubina does not know how to resolve this better.
-Thus, keeping simple map matching wiht `and` condition of overlaps.
+[^1]: https://pkg.go.dev/cmd/go#hdr-Build_constraints
+[^2]: https://go.dev/doc/diagnostics
