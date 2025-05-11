@@ -142,6 +142,12 @@ func (p *Processor) functionHasError(fnType *ast.FuncType) (ok bool, name string
 }
 
 func (p *Processor) Process(fset *token.FileSet, file *ast.File) error {
+	for _, q := range buildConstraintsFromFile(*file) {
+		if q.SkipFile() {
+			return nil
+		}
+	}
+
 	var patches []patch
 
 	astutil.Apply(file, nil, func(c *astutil.Cursor) bool {

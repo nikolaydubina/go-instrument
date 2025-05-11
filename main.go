@@ -8,7 +8,6 @@ import (
 	"go/parser"
 	"go/token"
 	"io"
-	"log"
 	"os"
 
 	"github.com/nikolaydubina/go-instrument/instrument"
@@ -56,15 +55,7 @@ func process(fileName, app string, overwrite, skipGenerated bool) error {
 		return err
 	}
 	if skipGenerated && ast.IsGenerated(file) {
-		log.Printf("skipping generated file: %s\n", fileName)
 		return nil
-	}
-
-	buildConstraints := processor.BuildConstraintsFromFile(*file)
-	for _, q := range buildConstraints {
-		if q.SkipFile() {
-			return nil
-		}
 	}
 
 	p := processor.Processor{

@@ -43,15 +43,19 @@ func TestApp(t *testing.T) {
 		assertEqFile(t, "./internal/testdata/instrumented/basic.go.exp", f)
 	})
 
-	t.Run("when generated file, then ok", func(t *testing.T) {
+	t.Run("when generated file, then skipped", func(t *testing.T) {
 		cmd := exec.Command(testbin, "-app", "app", "-w", "-skip-generated=true", "-filename", "./internal/testdata/skipped_generated.go")
 		cmd.Env = append(cmd.Environ(), "GOCOVERDIR=./coverage")
-		out, err := cmd.CombinedOutput()
-		if err != nil {
+		if _, err := cmd.CombinedOutput(); err != nil {
 			t.Error(err)
 		}
-		if !strings.Contains(string(out), "skipping generated file") {
-			t.Error("expected skipping generated file")
+	})
+
+	t.Run("when build constraint ignore, then skip", func(t *testing.T) {
+		cmd := exec.Command(testbin, "-app", "app", "-w", "-skip-generated=true", "-filename", "./internal/testdata/skipped_buildignore.go")
+		cmd.Env = append(cmd.Environ(), "GOCOVERDIR=./coverage")
+		if _, err := cmd.CombinedOutput(); err != nil {
+			t.Error(err)
 		}
 	})
 

@@ -1,29 +1,27 @@
-package processor_test
+package processor
 
 import (
 	"go/parser"
 	"go/token"
 	"slices"
 	"testing"
-
-	"github.com/nikolaydubina/go-instrument/processor"
 )
 
 func TestBuildConstraintsFromFile(t *testing.T) {
 	tests := []struct {
 		fileName string
-		vs       []processor.BuildConstraint
+		vs       []buildConstraint
 	}{
 		{
 			fileName: "../internal/testdata/skipped_buildignore.go",
-			vs: []processor.BuildConstraint{
-				processor.BuildIgnore,
+			vs: []buildConstraint{
+				buildIgnore,
 			},
 		},
 		{
 			fileName: "../internal/testdata/skipped_gobuildignore.go",
-			vs: []processor.BuildConstraint{
-				processor.BuildIgnore,
+			vs: []buildConstraint{
+				buildIgnore,
 			},
 		},
 	}
@@ -35,7 +33,7 @@ func TestBuildConstraintsFromFile(t *testing.T) {
 				t.Error(err)
 			}
 
-			vs := processor.BuildConstraintsFromFile(*f)
+			vs := buildConstraintsFromFile(*f)
 
 			if !slices.Equal(vs, tc.vs) {
 				t.Error(vs, tc.vs)
@@ -47,45 +45,45 @@ func TestBuildConstraintsFromFile(t *testing.T) {
 func TestParseBuildConstraint(t *testing.T) {
 	tests := []struct {
 		s string
-		v processor.BuildConstraint
+		v buildConstraint
 	}{
 		{
 			s: "//go:build ignore",
-			v: processor.BuildIgnore,
+			v: buildIgnore,
 		},
 		{
 			s: "//go:build exclude",
-			v: processor.BuildExclude,
+			v: buildExclude,
 		},
 		{
 			s: "// +build ignore",
-			v: processor.BuildIgnore,
+			v: buildIgnore,
 		},
 		{
 			s: "// +build exclude",
-			v: processor.BuildExclude,
+			v: buildExclude,
 		},
 		// whitespace
 		{
 			s: "//go:build    ignore   ",
-			v: processor.BuildIgnore,
+			v: buildIgnore,
 		},
 		{
 			s: "//go:build     exclude    ",
-			v: processor.BuildExclude,
+			v: buildExclude,
 		},
 		{
 			s: "//    +build    ignore    ",
-			v: processor.BuildIgnore,
+			v: buildIgnore,
 		},
 		{
 			s: "//    +build    exclude   ",
-			v: processor.BuildExclude,
+			v: buildExclude,
 		},
 	}
 	for _, tc := range tests {
 		t.Run(tc.s, func(t *testing.T) {
-			if v := processor.ParseBuildConstraint(tc.s); v != tc.v {
+			if v := parseBuildConstraint(tc.s); v != tc.v {
 				t.Error(v)
 			}
 		})

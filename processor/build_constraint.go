@@ -6,43 +6,43 @@ import (
 	"slices"
 )
 
-// BuildConstraint is selected tags for build constraints
+// buildConstraint is selected tags for build constraints
 // https://pkg.go.dev/cmd/go#hdr-Build_constraints
-type BuildConstraint uint
+type buildConstraint uint
 
 const (
-	UnknownBuildConstraint BuildConstraint = iota
-	BuildIgnore
-	BuildExclude
+	unknownBuildConstraint buildConstraint = iota
+	buildIgnore
+	buildExclude
 )
 
-func (v BuildConstraint) SkipFile() bool {
+func (v buildConstraint) SkipFile() bool {
 	switch v {
-	case BuildIgnore, BuildExclude:
+	case buildIgnore, buildExclude:
 		return true
 	default:
 		return false
 	}
 }
 
-func ParseBuildConstraint(s string) BuildConstraint {
+func parseBuildConstraint(s string) buildConstraint {
 	expr, err := constraint.Parse(s)
 	if err != nil {
-		return UnknownBuildConstraint
+		return unknownBuildConstraint
 	}
 
 	switch {
 	case expr.Eval(func(tag string) bool { return tag == "ignore" }):
-		return BuildIgnore
+		return buildIgnore
 	case expr.Eval(func(tag string) bool { return tag == "exclude" }):
-		return BuildExclude
+		return buildExclude
 	default:
-		return UnknownBuildConstraint
+		return unknownBuildConstraint
 	}
 }
 
-func BuildConstraintsFromFile(file ast.File) []BuildConstraint {
-	var constraints []BuildConstraint
+func buildConstraintsFromFile(file ast.File) []buildConstraint {
+	var constraints []buildConstraint
 	for _, q := range file.Comments {
 		if q == nil {
 			continue
@@ -51,7 +51,7 @@ func BuildConstraintsFromFile(file ast.File) []BuildConstraint {
 			if c == nil {
 				continue
 			}
-			if d := ParseBuildConstraint(c.Text); d != UnknownBuildConstraint {
+			if d := parseBuildConstraint(c.Text); d != unknownBuildConstraint {
 				constraints = append(constraints, d)
 			}
 		}
