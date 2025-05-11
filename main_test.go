@@ -43,16 +43,6 @@ func TestApp(t *testing.T) {
 		assertEqFile(t, "./internal/testdata/instrumented/basic.go.exp", f)
 	})
 
-	t.Run("when include only, then ok", func(t *testing.T) {
-		f := copyFile(t, "./internal/testdata/basic_include_only.go")
-		cmd := exec.Command(testbin, "-app", "app", "-w", "-all=false", "-filename", f)
-		cmd.Env = append(cmd.Environ(), "GOCOVERDIR=./coverage")
-		if err := cmd.Run(); err != nil {
-			t.Error(err)
-		}
-		assertEqFile(t, "./internal/testdata/instrumented/basic_include_only.go.exp", f)
-	})
-
 	t.Run("when generated file, then ok", func(t *testing.T) {
 		cmd := exec.Command(testbin, "-app", "app", "-w", "-skip-generated=true", "-filename", "./internal/testdata/skipped_generated.go")
 		cmd.Env = append(cmd.Environ(), "GOCOVERDIR=./coverage")
@@ -61,7 +51,7 @@ func TestApp(t *testing.T) {
 			t.Error(err)
 		}
 		if !strings.Contains(string(out), "skipping generated file") {
-			t.Errorf("expected skipping generated file")
+			t.Error("expected skipping generated file")
 		}
 	})
 
@@ -69,7 +59,7 @@ func TestApp(t *testing.T) {
 		cmd := exec.Command(testbin, "-filename", "asdf")
 		cmd.Env = append(cmd.Environ(), "GOCOVERDIR=./coverage")
 		if err := cmd.Run(); err == nil {
-			t.Errorf("expected exit code 1")
+			t.Error("expected exit code 1")
 		}
 	})
 
@@ -77,7 +67,7 @@ func TestApp(t *testing.T) {
 		cmd := exec.Command(testbin, "-filename", "README.md")
 		cmd.Env = append(cmd.Environ(), "GOCOVERDIR=./coverage")
 		if err := cmd.Run(); err == nil {
-			t.Errorf("expected exit code 1")
+			t.Error("expected exit code 1")
 		}
 	})
 
@@ -85,15 +75,7 @@ func TestApp(t *testing.T) {
 		cmd := exec.Command(testbin)
 		cmd.Env = append(cmd.Environ(), "GOCOVERDIR=./coverage")
 		if err := cmd.Run(); err == nil {
-			t.Errorf("expected exit code 1")
-		}
-	})
-
-	t.Run("when can not parse commands, then err", func(t *testing.T) {
-		cmd := exec.Command(testbin, "-app", "app", "-w", "-all=false", "-filename", "./internal/testdata/error_unkonwn_command.go")
-		cmd.Env = append(cmd.Environ(), "GOCOVERDIR=./coverage")
-		if err := cmd.Run(); err == nil {
-			t.Errorf("expected exit code 1")
+			t.Error("expected exit code 1")
 		}
 	})
 

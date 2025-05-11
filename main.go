@@ -20,25 +20,23 @@ func main() {
 		fileName      string
 		overwrite     bool
 		app           string
-		defaultSelect bool
 		skipGenerated bool
 	)
 	flag.StringVar(&fileName, "filename", "", "go file to instrument")
 	flag.StringVar(&app, "app", "app", "name of application")
 	flag.BoolVar(&overwrite, "w", false, "overwrite original file")
-	flag.BoolVar(&defaultSelect, "all", true, "instrument all by default")
 	flag.BoolVar(&skipGenerated, "skip-generated", false, "skip generated files")
 	flag.Parse()
 
-	if err := process(fileName, app, overwrite, defaultSelect, skipGenerated); err != nil {
+	if err := process(fileName, app, overwrite, skipGenerated); err != nil {
 		os.Stderr.WriteString(err.Error())
 		os.Exit(1)
 	}
 }
 
-func process(fileName, app string, overwrite, defaultSelect, skipGenerated bool) error {
+func process(fileName, app string, overwrite, skipGenerated bool) error {
 	if fileName == "" {
-		return errors.New("missing arg: file name")
+		return errors.New("missing file name")
 	}
 
 	src, err := os.ReadFile(fileName)
@@ -54,7 +52,7 @@ func process(fileName, app string, overwrite, defaultSelect, skipGenerated bool)
 	fset := token.NewFileSet()
 
 	file, err := parser.ParseFile(fset, fileName, formattedSrc, parser.ParseComments)
-	if err != nil {
+	if err != nil || file == nil {
 		return err
 	}
 	if skipGenerated && ast.IsGenerated(file) {
@@ -69,24 +67,17 @@ func process(fileName, app string, overwrite, defaultSelect, skipGenerated bool)
 		}
 	}
 
-	commands, err := processor.CommandsFromFile(*file)
-	if err != nil {
-		return err
-	}
-	functionSelector := processor.NewMapFunctionSelectorFromCommands(defaultSelect, commands)
-
 	p := processor.Processor{
 		Instrumenter: &instrument.OpenTelemetry{
 			TracerName:             app,
 			ContextName:            "ctx",
 			ErrorStatusDescription: "error",
 		},
-		FunctionSelector: functionSelector,
-		SpanName:         processor.BasicSpanName,
-		ContextName:      "ctx",
-		ContextPackage:   "context",
-		ContextType:      "Context",
-		ErrorType:        `error`,
+		SpanName:       processor.BasicSpanName,
+		ContextName:    "ctx",
+		ContextPackage: "context",
+		ContextType:    "Context",
+		ErrorType:      `error`,
 	}
 
 	if err := p.Process(fset, file); err != nil {

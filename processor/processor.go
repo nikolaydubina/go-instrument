@@ -29,13 +29,12 @@ func BasicSpanName(receiver, function string) string {
 
 // Processor traverses AST, collects details on functions and methods, and invokes Instrumenter
 type Processor struct {
-	Instrumenter     Instrumenter
-	FunctionSelector FunctionSelector
-	SpanName         func(receiver, function string) string
-	ContextName      string
-	ContextPackage   string
-	ContextType      string
-	ErrorType        string
+	Instrumenter   Instrumenter
+	SpanName       func(receiver, function string) string
+	ContextName    string
+	ContextPackage string
+	ContextType    string
+	ErrorType      string
 }
 
 func (p *Processor) methodReceiverTypeName(fn *ast.FuncDecl) string {
@@ -163,10 +162,6 @@ func (p *Processor) Process(fset *token.FileSet, file *ast.File) error {
 			fname = p.functionName(fn)
 			receiver = p.methodReceiverTypeName(fn)
 		default:
-			return true
-		}
-
-		if !p.FunctionSelector.AcceptFunction(fname) {
 			return true
 		}
 

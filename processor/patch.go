@@ -30,11 +30,11 @@ func patchFile(fset *token.FileSet, file *ast.File, patches ...patch) error {
 	for _, patch := range patches {
 		buf.Reset()
 
-		buf.WriteString("\n")
+		buf.WriteRune('\n')
 		if err := format.Node(&buf, fset, patch.stmts); err != nil {
 			return err
 		}
-		buf.WriteString("\n")
+		buf.WriteRune('\n')
 
 		pos := int(patch.pos) - offset
 		src = append(src[:pos], append(buf.Bytes(), src[pos:]...)...)

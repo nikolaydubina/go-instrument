@@ -12,7 +12,7 @@
 
 This tool uses standard Go library to modify AST with instrumentation. You can add new instrumentations by defining your own `Instrumenter` and invoking `Processor` like it is done in `main`.
 
-* No dependencies
+* no dependencies
 * 500 LOC
 * OpenTelemetry
 
@@ -49,27 +49,15 @@ Example HTTP server [go-instrument-example](https://github.com/nikolaydubina/go-
 
 ## Features
 
-### Excluding and Including
-
-To avoid instrumentation of function add comment directive anywhere in the file.
-
-```go
-//instrument:exclude SomeFunc|SomeOtherfunc|privateFunc
-...
-
-func (s Cat) Name(ctx context.Context) (name string, err error) {
-  //instrument:exclude Name
-```
-
-To instrument only specific functions add comment directive anywhere in the file and pass `-all=false` in CLI.
-
-```go
-//instrument:include SomeFunc|SomeOtherfunc|privateFunc
-...
-
-func (s Cat) Name(ctx context.Context) (name string, err error) {
-  //instrument:include Name
-```
+- [x] Keeps comments
+- [x] Dynamic error variable name
+- [ ] Dynamic ctx variable name
+- [ ] Creating error when return is not named
+- [x] Detection if function is already instrumented
+- [ ] Span Tags arguments
+- [ ] Span Tags returns
+- [ ] Changing `_` to `ctx` when it is unused
+- [ ] Mode to remove added instrumentation
 
 ### Errors
 
@@ -90,17 +78,6 @@ More details `go help buildconstraint` and https://pkg.go.dev/cmd/go#hdr-Build_c
 * `//go:build ignore`
 * `// +build ignore`
 
-### Features
-
-- [x] Keeps comments
-- [x] Dynamic error variable name
-- [ ] Dynamic ctx variable name
-- [ ] Creating error when return is not named
-- [x] Detection if function is already instrumented
-- [ ] Span Tags arguments
-- [ ] Span Tags returns
-- [ ] Changing `_` to `ctx` when it is unused
-- [ ] Mode to remove added instrumentation
 
 ## Motivation
 
@@ -138,7 +115,9 @@ $ go build -gcflags="-m -m" ./internal/testdata 2>&1 | grep OneLine
 internal/testdata/basic.go:132:6: cannot inline OneLineTypical: unhandled op DEFER
 ``` 
 
-----
+## ADR
+
+- `2025-05-11` not using commands like `//instrument:exclude` because: practice this tool is used to instrument everything; there is still mechanism to exclude whole file; there is already automatic detection of instrumented functions. therefore, to simplify not using commands.
 
 ## Appendix A: Related Work
 
