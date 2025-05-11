@@ -1,7 +1,5 @@
 # ⚡️ go-instrument
 
-> Automatically add Trace Spans to Go methods and functions
-
 [![codecov](https://codecov.io/gh/nikolaydubina/go-instrument/branch/master/graph/badge.svg?token=pXGPrKmAbT)](https://codecov.io/gh/nikolaydubina/go-instrument)
 [![Go Report Card](https://goreportcard.com/badge/github.com/nikolaydubina/go-instrument)](https://goreportcard.com/report/github.com/nikolaydubina/go-instrument)
 [![Go Reference](https://pkg.go.dev/badge/github.com/nikolaydubina/go-instrument.svg)](https://pkg.go.dev/github.com/nikolaydubina/go-instrument)
@@ -10,8 +8,7 @@
 [![OpenSSF Scorecard](https://api.securityscorecards.dev/projects/github.com/nikolaydubina/go-instrument/badge)](https://securityscorecards.dev/viewer/?uri=github.com/nikolaydubina/go-instrument)
 [![Hits](https://hits.sh/github.com/nikolaydubina/go-instrument.svg?view=today-total)](https://hits.sh/github.com/nikolaydubina/go-instrument/)
 
-This tool uses standard Go library to modify AST with instrumentation.
-You can add new instrumentations by defining your own `Instrumenter` and invoking `Processor` like it is done in `main`.
+Automatically add Trace Spans to Go methods and functions.
 
 ```bash
 go install github.com/nikolaydubina/go-instrument@latest
@@ -43,6 +40,9 @@ func (s Cat) Name(ctx context.Context) (name string, err error) {
 
 Example HTTP server [go-instrument-example](https://github.com/nikolaydubina/go-instrument-example) as it appears in Datadog.
 ![](./docs/fib-error.png)
+
+This tool uses standard Go library to modify AST with instrumentation.
+You can add new instrumentations by defining your own `Instrumenter` and invoking `Processor` like it is done in `main`.
 
 ## Features
 
