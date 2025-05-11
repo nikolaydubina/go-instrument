@@ -131,6 +131,10 @@ func (s *Apple) MethodWithCustomContextName(myContext context.Context, a int) (e
 	return nil
 }
 
+func (s *Apple) MethodWithAnonymousContext(_ context.Context, a int) (err error) {
+	return nil
+}
+
 func Fib(ctx context.Context, n int) int {
 	ctx, span := otel.Tracer("app").Start(ctx, "Fib")
 	defer span.End()

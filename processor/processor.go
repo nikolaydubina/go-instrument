@@ -68,8 +68,7 @@ func (p *Processor) contextNameFromParam(e *ast.Field) string {
 		return ""
 	}
 
-	pkg := ""
-	sym := ""
+	var pkg, sym string
 
 	if se, ok := e.Type.(*ast.SelectorExpr); ok && se != nil {
 		if v, ok := se.X.(*ast.Ident); ok && v != nil {
@@ -81,7 +80,9 @@ func (p *Processor) contextNameFromParam(e *ast.Field) string {
 	}
 
 	if pkg == p.ContextPackage && sym == p.ContextType {
-		return e.Names[0].Name
+		if ctx := e.Names[0].Name; ctx != "_" {
+			return ctx
+		}
 	}
 
 	return ""
