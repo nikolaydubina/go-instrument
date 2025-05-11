@@ -14,11 +14,6 @@ type Instrumenter interface {
 	PrefixStatements(spanName string, hasError bool, errName string) []ast.Stmt
 }
 
-// FunctionSelector tells if function has to be instrumented.
-type FunctionSelector interface {
-	AcceptFunction(functionName string) bool
-}
-
 // BasicSpanName is common notation of <class>.<method> or <pkg>.<func>
 func BasicSpanName(receiver, function string) string {
 	if receiver == "" {
