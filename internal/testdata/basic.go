@@ -22,6 +22,12 @@ func AnonymousFuncSkippedNoContext(ctx context.Context) func() (name string, err
 	}
 }
 
+func AnonymousFuncSkippedAnonymousContext(ctx context.Context) func(_ context.Context) (name string, err error) {
+	return func(_ context.Context) (name string, err error) {
+		return "fluffer", nil
+	}
+}
+
 type Cat struct{}
 
 func (s Cat) Name(ctx context.Context) (name string, err error) {
