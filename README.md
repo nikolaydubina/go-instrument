@@ -18,7 +18,7 @@ go install github.com/nikolaydubina/go-instrument@latest
 find . -name "*.go" | xargs -I{} go-instrument -app my-service -w -filename {}
 ```
 
-Functions and methods with `ctx context.Context` in arguments
+Functions and methods with `context.Context` in arguments
 ```go
 func (s Cat) Name(ctx context.Context) (name string, err error) {
   ...
