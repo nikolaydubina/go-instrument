@@ -8,7 +8,7 @@
 [![OpenSSF Scorecard](https://api.securityscorecards.dev/projects/github.com/nikolaydubina/go-instrument/badge)](https://securityscorecards.dev/viewer/?uri=github.com/nikolaydubina/go-instrument)
 [![Hits](https://hits.sh/github.com/nikolaydubina/go-instrument.svg?view=today-total)](https://hits.sh/github.com/nikolaydubina/go-instrument/)
 
-Automatically add Trace Spans to Go methods and functions.
+Automatically add Trace Spans to Go functions
 
 ```bash
 go install github.com/nikolaydubina/go-instrument@latest
