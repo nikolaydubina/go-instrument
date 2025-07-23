@@ -128,14 +128,14 @@ func assertEqFile(t *testing.T, a, b string) {
 		// Normalize //line directives to compare only the line numbers, not filenames
 		lineA := normalizeLineDirective(la[i])
 		lineB := normalizeLineDirective(lb[i])
-		
+
 		if lineA != lineB {
 			t.Errorf("files are different at line(%d)\n%s\n%s\n", i, la[i], lb[i])
 		}
 	}
 }
 
-// normalizeLineDirective replaces the filename in //line directives with "FILE" 
+// normalizeLineDirective replaces the filename in //line directives with "FILE"
 // so that comparisons focus on line numbers, not temp filenames
 func normalizeLineDirective(line string) string {
 	if strings.HasPrefix(line, "//line ") {
@@ -220,7 +220,7 @@ func main() {
 	instrumentedLines := extractLineNumbers(string(instrumentedOutput))
 	expectedOutputFile := "/home/runner/work/go-instrument/go-instrument/testdata/panic_output.txt"
 	os.WriteFile(expectedOutputFile, origOutput, 0644)
-	
+
 	// Compare only the user code line numbers (ignore main function which is test-added)
 	if len(origLines) == 0 || len(instrumentedLines) == 0 {
 		t.Errorf("Could not extract line numbers from stack traces")

@@ -37,7 +37,7 @@ func patchFile(fset *token.FileSet, file *ast.File, patches ...patch) error {
 		if err := format.Node(&buf, fset, patch.stmts); err != nil {
 			return err
 		}
-		
+
 		// line directive to preserve original line numbers for the first original statement
 		// https://github.com/golang/go/blob/master/src/cmd/compile/doc.go#L171
 		if patch.fnBody != nil && len(patch.fnBody.List) > 0 {
@@ -50,7 +50,7 @@ func patchFile(fset *token.FileSet, file *ast.File, patches ...patch) error {
 			// So the blank line should be firstStmtPos.Line-1
 			buf.WriteString(fmt.Sprintf("\n//line %s:%d", basename, firstStmtPos.Line-3))
 		}
-		
+
 		buf.WriteRune('\n')
 
 		pos := int(patch.pos) - offset
