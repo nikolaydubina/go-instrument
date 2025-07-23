@@ -6,6 +6,7 @@ import (
 	"os/exec"
 	"path"
 	"regexp"
+	"slices"
 	"strconv"
 	"strings"
 	"testing"
@@ -167,33 +168,42 @@ func TestPanicLineNumbers(t *testing.T) {
 	t.Run("nested panic line numbers preserved", func(t *testing.T) {
 		testPanicScenario(t, testbin, "Level1")
 	})
+
 	t.Run("complex function panic line numbers preserved", func(t *testing.T) {
 		testPanicScenario(t, testbin, "FuncWithBody")
 	})
 }
+
 func testPanicScenario(t *testing.T, testbin, entryFunc string) {
 	tempDir := t.TempDir()
+
 	sourceFile := "testdata/internal/panics.go"
 	sourceBytes, err := os.ReadFile(sourceFile)
 	if err != nil {
 		t.Fatal(err)
 	}
+
 	content := string(sourceBytes) + `
 
 func main() {
 	` + entryFunc + `(context.Background())
 }`
-	origFile := path.Join(tempDir, "test_panic.go")
-	if err := os.WriteFile(origFile, []byte(content), 0644); err != nil {
+	originalFile := path.Join(tempDir, "test_panic.go")
+	if err := os.WriteFile(originalFile, []byte(content), 0644); err != nil {
 		t.Fatal(err)
 	}
-	origBinary := path.Join(tempDir, "original_panic")
-	buildCmd := exec.Command("go", "build", "-o", origBinary, "test_panic.go")
+
+	originalBinary := path.Join(tempDir, "original_panic")
+
+	buildCmd := exec.Command("go", "build", "-o", originalBinary, "test_panic.go")
 	buildCmd.Dir = tempDir
+
 	if err := buildCmd.Run(); err != nil {
 		t.Fatal(err)
 	}
-	origOutput, _ := exec.Command(origBinary).CombinedOutput()
+
+	origOutput, _ := exec.Command(originalBinary).CombinedOutput()
+
 	instrumentedFile := path.Join(tempDir, "test_panic_instrumented.go")
 	if err := os.WriteFile(instrumentedFile, []byte(content), 0644); err != nil {
 		t.Fatal(err)
@@ -201,42 +211,35 @@ func main() {
 	if err := exec.Command(testbin, "-w", "-filename", instrumentedFile).Run(); err != nil {
 		t.Fatal(err)
 	}
-	goModBytes, _ := os.ReadFile("go.mod")
-	goSumBytes, _ := os.ReadFile("go.sum")
-	os.WriteFile(path.Join(tempDir, "go.mod"), goModBytes, 0644)
-	os.WriteFile(path.Join(tempDir, "go.sum"), goSumBytes, 0644)
-	modCmd := exec.Command("go", "mod", "tidy")
+
+	modCmd := exec.Command("go", "mod", "init", "test_panic_instrumented")
 	modCmd.Dir = tempDir
 	modCmd.Run()
+
+	modTidyCmd := exec.Command("go", "mod", "tidy")
+	modTidyCmd.Dir = tempDir
+	modTidyCmd.Run()
+
 	instrumentedBinary := path.Join(tempDir, "instrumented_panic")
+
 	buildCmd = exec.Command("go", "build", "-o", instrumentedBinary, "test_panic_instrumented.go")
 	buildCmd.Dir = tempDir
-	if err := buildCmd.Run(); err != nil {
-		t.Fatal(err)
+	if out, err := buildCmd.CombinedOutput(); err != nil {
+		t.Fatal(err, string(out))
 	}
-	instrumentedOutput, _ := exec.Command(instrumentedBinary).CombinedOutput()
-	// Extract line numbers from both outputs to verify preservation
-	origLines := extractLineNumbers(string(origOutput))
-	instrumentedLines := extractLineNumbers(string(instrumentedOutput))
-	expectedOutputFile := "/home/runner/work/go-instrument/go-instrument/testdata/panic_output.txt"
-	os.WriteFile(expectedOutputFile, origOutput, 0644)
 
-	// Compare only the user code line numbers (ignore main function which is test-added)
-	if len(origLines) == 0 || len(instrumentedLines) == 0 {
-		t.Errorf("Could not extract line numbers from stack traces")
-	} else if !equalUserCodeLineNumbers(origLines, instrumentedLines) {
-		t.Errorf("User code line numbers in stack traces don't match")
-		t.Logf("Original line numbers: %v", origLines)
-		t.Logf("Instrumented line numbers: %v", instrumentedLines)
-		t.Logf("Original:\n%s", string(origOutput))
-		t.Logf("Instrumented:\n%s", string(instrumentedOutput))
+	instrumentedOutput, _ := exec.Command(instrumentedBinary).CombinedOutput()
+
+	originalLines := extractLineNumbers(string(origOutput))
+	instrumentedLines := extractLineNumbers(string(instrumentedOutput))
+
+	if !slices.Equal(originalLines, instrumentedLines) {
+		t.Error(originalLines, instrumentedLines, string(origOutput), string(instrumentedOutput))
 	}
 }
 
-// extractLineNumbers extracts line numbers from stack trace output
 func extractLineNumbers(output string) []int {
 	var lines []int
-	// Look for patterns like "test.go:26" or "/path/test.go:26"
 	re := regexp.MustCompile(`\.go:(\d+)`)
 	matches := re.FindAllStringSubmatch(output, -1)
 	for _, match := range matches {
@@ -247,13 +250,4 @@ func extractLineNumbers(output string) []int {
 		}
 	}
 	return lines
-}
-
-// equalUserCodeLineNumbers compares only the first line number (main panic location)
-func equalUserCodeLineNumbers(orig, instrumented []int) bool {
-	// The most important thing is that the first line number (panic location) matches
-	if len(orig) == 0 || len(instrumented) == 0 {
-		return false
-	}
-	return orig[0] == instrumented[0]
 }
