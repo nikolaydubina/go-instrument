@@ -43,10 +43,11 @@ func patchFile(fset *token.FileSet, file *ast.File, patches ...patch) error {
 		// Add line directive to preserve original line numbers for the first original statement
 		if patch.fnBody != nil && patch.filename != "" && len(patch.fnBody.List) > 0 {
 			firstStmt := patch.fnBody.List[0]
-			pos := fset.Position(firstStmt.Pos())
+			firstStmtPos := fset.Position(firstStmt.Pos())
 			basename := filepath.Base(patch.filename)
-			// Subtract 1 so that the first statement gets the correct line number
-			buf.WriteString(fmt.Sprintf("\n//line %s:%d", basename, pos.Line-1))
+			// We want the first statement after the blank line to appear at its original line number
+			// Account for the blank line after the //line directive
+			buf.WriteString(fmt.Sprintf("\n//line %s:%d", basename, firstStmtPos.Line-3))
 		}
 		
 		buf.WriteRune('\n')

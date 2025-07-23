@@ -22,7 +22,7 @@ func AnonymousFunc() func(ctx context.Context) (name string, err error) {
 				span.RecordError(err)
 			}
 		}()
-//line basic.go:14
+//line regenerate_basic.go:12
 
 		return "fluffer", nil
 	}
@@ -31,7 +31,7 @@ func AnonymousFunc() func(ctx context.Context) (name string, err error) {
 func AnonymousFuncSkippedNoContext(ctx context.Context) func() (name string, err error) {
 	ctx, span := otel.Tracer("app").Start(ctx, "AnonymousFuncSkippedNoContext")
 	defer span.End()
-//line basic.go:19
+//line regenerate_basic.go:17
 
 	return func() (name string, err error) {
 		return "fluffer", nil
@@ -41,7 +41,7 @@ func AnonymousFuncSkippedNoContext(ctx context.Context) func() (name string, err
 func AnonymousFuncSkippedAnonymousContext(ctx context.Context) func(_ context.Context) (name string, err error) {
 	ctx, span := otel.Tracer("app").Start(ctx, "AnonymousFuncSkippedAnonymousContext")
 	defer span.End()
-//line basic.go:25
+//line regenerate_basic.go:23
 
 	return func(_ context.Context) (name string, err error) {
 		return "fluffer", nil
@@ -59,7 +59,7 @@ func (s Cat) Name(ctx context.Context) (name string, err error) {
 			span.RecordError(err)
 		}
 	}()
-//line basic.go:33
+//line regenerate_basic.go:31
 
 	return "fluffer", nil
 }
@@ -75,7 +75,7 @@ func (s *Apple) MethodWithPointerReciver(ctx context.Context, a int) (err error)
 			span.RecordError(err)
 		}
 	}()
-//line basic.go:39
+//line regenerate_basic.go:37
 
 	return nil
 }
@@ -89,7 +89,7 @@ func (s Apple) MethodWithValueReciver(ctx context.Context, a int) (err error) {
 			span.RecordError(err)
 		}
 	}()
-//line basic.go:43
+//line regenerate_basic.go:41
 
 	return nil
 }
@@ -103,7 +103,7 @@ func (*Apple) MethodWithPointerReciverUnnamed(ctx context.Context, a int) (err e
 			span.RecordError(err)
 		}
 	}()
-//line basic.go:47
+//line regenerate_basic.go:45
 
 	return nil
 }
@@ -117,7 +117,7 @@ func (Apple) MethodWithValueReciverUnnamed(ctx context.Context, a int) (err erro
 			span.RecordError(err)
 		}
 	}()
-//line basic.go:51
+//line regenerate_basic.go:49
 
 	return nil
 }
@@ -131,7 +131,7 @@ func (s *Apple) MethodWithCustomErrorName(ctx context.Context, a int) (errXYZ er
 			span.RecordError(errXYZ)
 		}
 	}()
-//line basic.go:55
+//line regenerate_basic.go:53
 
 	return nil
 }
@@ -145,7 +145,7 @@ func (s *Apple) MethodWithCustomContextName(myContext context.Context, a int) (e
 			span.RecordError(err)
 		}
 	}()
-//line basic.go:59
+//line regenerate_basic.go:57
 
 	return nil
 }
@@ -157,7 +157,7 @@ func (s *Apple) MethodWithAnonymousContext(_ context.Context, a int) (err error)
 func Fib(ctx context.Context, n int) int {
 	ctx, span := otel.Tracer("app").Start(ctx, "Fib")
 	defer span.End()
-//line basic.go:67
+//line regenerate_basic.go:65
 
 	if n == 0 || n == 1 {
 		return 1
@@ -174,7 +174,7 @@ func Basic(ctx context.Context) (err error) {
 			span.RecordError(err)
 		}
 	}()
-//line basic.go:74
+//line regenerate_basic.go:72
 
 	return nil
 }
@@ -182,7 +182,7 @@ func Basic(ctx context.Context) (err error) {
 func Comment(ctx context.Context) int {
 	ctx, span := otel.Tracer("app").Start(ctx, "Comment")
 	defer span.End()
-//line basic.go:80
+//line regenerate_basic.go:78
 
 	// some-comment first line
 	// some-comment second line
@@ -211,7 +211,7 @@ func OneLine(n int) int { return fib(n) }
 func OneLineTypical(ctx context.Context, n int) (int, error) {
 	ctx, span := otel.Tracer("app").Start(ctx, "OneLineTypical")
 	defer span.End()
-//line basic.go:102
+//line regenerate_basic.go:100
 	return fib(n), nil
 }
 
@@ -226,7 +226,7 @@ func CustomName(b int, specialCtx context.Context) (specialErr error) {
 			span.RecordError(specialErr)
 		}
 	}()
-//line basic.go:107
+//line regenerate_basic.go:105
 
 	return nil
 }
@@ -240,7 +240,7 @@ func MultipleContextMultipleError(a context.Context, b context.Context) (erra er
 			span.RecordError(erra)
 		}
 	}()
-//line basic.go:111
+//line regenerate_basic.go:109
 
 	return nil, nil
 }
@@ -252,7 +252,7 @@ func MultipleContextMultipleErrorCollapsed(a, b context.Context) (erra, errob er
 func MultipleErrorNotNamed(ctx context.Context) (error, error) {
 	ctx, span := otel.Tracer("app").Start(ctx, "MultipleErrorNotNamed")
 	defer span.End()
-//line basic.go:119
+//line regenerate_basic.go:117
 
 	return nil, nil
 }
@@ -260,7 +260,7 @@ func MultipleErrorNotNamed(ctx context.Context) (error, error) {
 func Closure(ctx context.Context) (int, error) {
 	ctx, span := otel.Tracer("app").Start(ctx, "Closure")
 	defer span.End()
-//line basic.go:123
+//line regenerate_basic.go:121
 
 	a := func(x int) (int, error) { return x + 1, nil }
 	return a(5)
@@ -269,12 +269,12 @@ func Closure(ctx context.Context) (int, error) {
 func FunctionCallingAnonymousFunc(ctx context.Context) error {
 	ctx, span := otel.Tracer("app").Start(ctx, "FunctionCallingAnonymousFunc")
 	defer span.End()
-//line basic.go:128
+//line regenerate_basic.go:126
 
 	if err := Exec(ctx, func(ctx context.Context) error {
 		ctx, span := otel.Tracer("app").Start(ctx, "anonymous")
 		defer span.End()
-//line basic.go:129
+//line regenerate_basic.go:127
 
 		return nil
 	}); err != nil {
@@ -286,7 +286,7 @@ func FunctionCallingAnonymousFunc(ctx context.Context) error {
 func Exec(ctx context.Context, fn func(ctx context.Context) error) error {
 	ctx, span := otel.Tracer("app").Start(ctx, "Exec")
 	defer span.End()
-//line basic.go:137
+//line regenerate_basic.go:135
 
 	return fn(ctx)
 }
