@@ -56,7 +56,8 @@ func patchFile(fset *token.FileSet, file *ast.File, patches ...patch) error {
 
 	// Post-process the source to ensure line directives are immediately before statements
 	// This removes any whitespace between /*line*/ directives and the following statements
-	src = cleanupLineDirectives(src)
+	// TODO: Fix cleanup function to handle all syntax cases correctly
+	// src = cleanupLineDirectives(src)  // Temporarily disabled due to syntax issues
 
 	nfile, err := parser.ParseFile(fset, fset.Position(file.Pos()).Filename, src, parser.ParseComments)
 	if err != nil {
@@ -75,19 +76,20 @@ func cleanupLineDirectives(src []byte) []byte {
 	for i := 0; i < len(lines); i++ {
 		line := lines[i]
 		
-		// Check if this line contains a /*line*/ directive
-		if bytes.Contains(line, []byte("/*line ")) && bytes.Contains(line, []byte("*/")) {
-			// This line has a line directive
+		// Check if this line contains ONLY a /*line*/ directive (with optional whitespace)
+		trimmed := bytes.TrimSpace(line)
+		if bytes.HasPrefix(trimmed, []byte("/*line ")) && bytes.HasSuffix(trimmed, []byte("*/")) && len(trimmed) > 10 {
+			// This line has only a line directive
 			// Find the next non-empty, non-comment line
 			var nextContentLine []byte
 			var nextContentIndex int = -1
 			
 			for j := i + 1; j < len(lines); j++ {
 				nextLine := lines[j]
-				trimmed := bytes.TrimSpace(nextLine)
+				nextTrimmed := bytes.TrimSpace(nextLine)
 				
 				// Skip empty lines and comment-only lines
-				if len(trimmed) == 0 || bytes.HasPrefix(trimmed, []byte("//")) {
+				if len(nextTrimmed) == 0 || bytes.HasPrefix(nextTrimmed, []byte("//")) {
 					continue
 				}
 				
@@ -98,12 +100,13 @@ func cleanupLineDirectives(src []byte) []byte {
 			}
 			
 			if nextContentIndex != -1 {
-				// Combine the directive with the content line
-				trimmed := bytes.TrimLeft(nextContentLine, " \t")
-				combinedLine := append(line, trimmed...)
+				// Combine the directive with the content line, preserving indentation
+				indentation := bytes.TrimRight(nextContentLine, string(bytes.TrimLeft(nextContentLine, " \t")))
+				contentPart := bytes.TrimLeft(nextContentLine, " \t")
+				combinedLine := append(append(indentation, trimmed...), contentPart...)
 				newLines = append(newLines, combinedLine)
 				
-				// Skip all lines up to and including the content line
+				// Skip all lines up to and including the content line  
 				i = nextContentIndex
 			} else {
 				// No content found, just add the directive line
