@@ -124,10 +124,26 @@ func assertEqFile(t *testing.T, a, b string) {
 	lb := strings.Split(string(fb), "\n")
 
 	for i := 0; i < len(la) && i < len(lb); i++ {
-		if la[i] != lb[i] {
+		// Normalize //line directives to compare only the line numbers, not filenames
+		lineA := normalizeLineDirective(la[i])
+		lineB := normalizeLineDirective(lb[i])
+		
+		if lineA != lineB {
 			t.Errorf("files are different at line(%d)\n%s\n%s\n", i, la[i], lb[i])
 		}
 	}
+}
+
+// normalizeLineDirective replaces the filename in //line directives with "FILE" 
+// so that comparisons focus on line numbers, not temp filenames
+func normalizeLineDirective(line string) string {
+	if strings.HasPrefix(line, "//line ") {
+		parts := strings.Split(line, ":")
+		if len(parts) == 2 {
+			return "//line FILE:" + parts[1]
+		}
+	}
+	return line
 }
 
 func copyFile(t *testing.T, from string) string {
