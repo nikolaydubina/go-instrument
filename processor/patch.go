@@ -40,7 +40,7 @@ func patchFile(fset *token.FileSet, file *ast.File, patches ...patch) error {
 
 		// line directives to preserve line numbers of functions (for accurate panic stack traces)
 		// https://github.com/golang/go/blob/master/src/cmd/compile/doc.go#L171
-		if patch.fnBody != nil && len(patch.fnBody.List) > 0 {
+		if patch.fnBody != nil && len(patch.fnBody.List) > 0 && patch.stmts != nil {
 			lbracePos := fset.Position(patch.fnBody.Lbrace)
 			firstStmt := patch.fnBody.List[0]
 			firstStmtPos := fset.Position(firstStmt.Pos())
