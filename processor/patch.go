@@ -45,8 +45,9 @@ func patchFile(fset *token.FileSet, file *ast.File, patches ...patch) error {
 			firstStmtPos := fset.Position(firstStmt.Pos())
 			filename := fset.Position(file.Pos()).Filename
 			basename := filepath.Base(filename)
-			// We want the first statement after the blank line to appear at its original line number
-			// Account for the blank line after the //line directive
+			// The line directive specifies what line the NEXT line should be treated as
+			// Since we have a blank line after the directive, we want the first statement to be firstStmtPos.Line
+			// So the blank line should be firstStmtPos.Line-1
 			buf.WriteString(fmt.Sprintf("\n//line %s:%d", basename, firstStmtPos.Line-3))
 		}
 		

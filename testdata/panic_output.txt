@@ -2,8 +2,8 @@ panic: nested panic on line 26
 
 goroutine 1 [running]:
 main.Level3(...)
-	/tmp/TestPanicLineNumberscomplex_function_panic_line_numbers_preserved1405028604/001/test_panic.go:26
+	/tmp/TestPanicLineNumberscomplex_function_panic_line_numbers_preserved975094715/001/test_panic.go:26
 main.FuncWithBody(...)
-	/tmp/TestPanicLineNumberscomplex_function_panic_line_numbers_preserved1405028604/001/test_panic.go:35
+	/tmp/TestPanicLineNumberscomplex_function_panic_line_numbers_preserved975094715/001/test_panic.go:35
 main.main()
-	/tmp/TestPanicLineNumberscomplex_function_panic_line_numbers_preserved1405028604/001/test_panic.go:43 +0x65
+	/tmp/TestPanicLineNumberscomplex_function_panic_line_numbers_preserved975094715/001/test_panic.go:43 +0x65
