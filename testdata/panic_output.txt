@@ -1,0 +1,7 @@
+panic: test panic on line 9
+
+goroutine 1 [running]:
+main.TestFunc(...)
+	test.go:9
+main.main(...)
+	test.go:30
