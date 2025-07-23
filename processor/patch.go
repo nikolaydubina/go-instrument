@@ -2,12 +2,12 @@ package processor
 
 import (
 	"bytes"
+	"fmt"
 	"go/ast"
 	"go/format"
 	"go/parser"
 	"go/token"
 	"sort"
-	"strconv"
 )
 
 type patch struct {
@@ -45,13 +45,7 @@ func patchFile(fset *token.FileSet, file *ast.File, patches ...patch) error {
 			firstStmtPos := fset.Position(firstStmt.Pos())
 			filename := fset.Position(file.Pos()).Filename
 
-			buf.WriteString("\n/*line ")
-			buf.WriteString(filename)
-			buf.WriteString(":")
-			buf.WriteString(strconv.Itoa(firstStmtPos.Line))
-			buf.WriteString(":")
-			buf.WriteString(strconv.Itoa(firstStmtPos.Column))
-			buf.WriteString("*/")
+			buf.WriteString(fmt.Sprintf("\n/*line %s:%d:%d*/", filename, firstStmtPos.Line, firstStmtPos.Column))
 		}
 
 		pos := int(patch.pos) - offset
@@ -60,6 +54,10 @@ func patchFile(fset *token.FileSet, file *ast.File, patches ...patch) error {
 		offset -= buf.Len()
 	}
 
+	// Post-process the source to ensure line directives are immediately before statements
+	// This removes any whitespace between /*line*/ directives and the following statements
+	src = cleanupLineDirectives(src)
+
 	nfile, err := parser.ParseFile(fset, fset.Position(file.Pos()).Filename, src, parser.ParseComments)
 	if err != nil {
 		return err
@@ -67,6 +65,56 @@ func patchFile(fset *token.FileSet, file *ast.File, patches ...patch) error {
 
 	*file = *nfile
 	return nil
+}
+
+// cleanupLineDirectives removes whitespace between /*line*/ directives and following statements
+func cleanupLineDirectives(src []byte) []byte {
+	lines := bytes.Split(src, []byte("\n"))
+	var newLines [][]byte
+	
+	for i := 0; i < len(lines); i++ {
+		line := lines[i]
+		
+		// Check if this line contains a /*line*/ directive
+		if bytes.Contains(line, []byte("/*line ")) && bytes.Contains(line, []byte("*/")) {
+			// This line has a line directive
+			// Find the next non-empty, non-comment line
+			var nextContentLine []byte
+			var nextContentIndex int = -1
+			
+			for j := i + 1; j < len(lines); j++ {
+				nextLine := lines[j]
+				trimmed := bytes.TrimSpace(nextLine)
+				
+				// Skip empty lines and comment-only lines
+				if len(trimmed) == 0 || bytes.HasPrefix(trimmed, []byte("//")) {
+					continue
+				}
+				
+				// Found the next content line
+				nextContentLine = nextLine
+				nextContentIndex = j
+				break
+			}
+			
+			if nextContentIndex != -1 {
+				// Combine the directive with the content line
+				trimmed := bytes.TrimLeft(nextContentLine, " \t")
+				combinedLine := append(line, trimmed...)
+				newLines = append(newLines, combinedLine)
+				
+				// Skip all lines up to and including the content line
+				i = nextContentIndex
+			} else {
+				// No content found, just add the directive line
+				newLines = append(newLines, line)
+			}
+		} else {
+			newLines = append(newLines, line)
+		}
+	}
+	
+	return bytes.Join(newLines, []byte("\n"))
 }
 
 func formatNodeToBytes(fset *token.FileSet, node any) ([]byte, error) {
