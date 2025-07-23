@@ -38,20 +38,34 @@ func patchFile(fset *token.FileSet, file *ast.File, patches ...patch) error {
 			return err
 		}
 
-		buf.WriteRune('\n')
-
 		// line directives to preserve line numbers of functions (for accurate panic stack traces)
 		// https://github.com/golang/go/blob/master/src/cmd/compile/doc.go#L171
 		if patch.fnBody != nil && len(patch.fnBody.List) > 0 {
+			lbracePos := fset.Position(patch.fnBody.Lbrace)
 			firstStmt := patch.fnBody.List[0]
-			pos := fset.Position(firstStmt.Pos())
+			firstStmtPos := fset.Position(firstStmt.Pos())
 			filename := fset.Position(file.Pos()).Filename
 
+			var lineDirectiveTarget int
+			var needsNewline bool
+			if lbracePos.Line == firstStmtPos.Line {
+				// One-line function: brace and statement on same line
+				lineDirectiveTarget = firstStmtPos.Line
+				needsNewline = true
+			} else {
+				// Multi-line function: use line after brace to preserve comments
+				lineDirectiveTarget = lbracePos.Line + 1
+				needsNewline = false
+			}
+
+			buf.WriteRune('\n')
 			buf.WriteString("//line ")
 			buf.WriteString(filename)
 			buf.WriteString(":")
-			buf.WriteString(strconv.Itoa(pos.Line - 1))
-			buf.WriteRune('\n')
+			buf.WriteString(strconv.Itoa(lineDirectiveTarget))
+			if needsNewline {
+				buf.WriteRune('\n')
+			}
 		}
 
 		pos := int(patch.pos) - offset
