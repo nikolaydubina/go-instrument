@@ -41,7 +41,7 @@ func patchFile(fset *token.FileSet, file *ast.File, patches ...patch) error {
 		buf.WriteRune('\n')
 
 		// Add line directive to preserve original line numbers for the first original statement
-		// TODO: try to move this before function declaration
+		// https://github.com/golang/go/blob/master/src/cmd/compile/doc.go#L171
 		if patch.fnBody != nil && len(patch.fnBody.List) > 0 {
 			firstStmt := patch.fnBody.List[0]
 			pos := fset.Position(firstStmt.Pos())
