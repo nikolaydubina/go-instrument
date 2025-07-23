@@ -25,3 +25,16 @@ func Level3(ctx context.Context) error {
 	// This is line 25
 	panic("nested panic on line 26") // Line 26
 }
+
+// Function with complex body containing loops and conditionals
+func FuncWithBody(ctx context.Context) error {
+	i := 1
+
+	for j := i; j < 100; j++ {
+		if j%13 == 2 {
+			return Level3(ctx) // This should report correct line number
+		}
+	}
+
+	return nil
+}

@@ -5,7 +5,6 @@ import (
 	"os"
 	"os/exec"
 	"path"
-	"regexp"
 	"strconv"
 	"strings"
 	"testing"
@@ -157,244 +156,81 @@ func copyFile(t *testing.T, from string) string {
 func TestPanicLineNumbers(t *testing.T) {
 	testbin := path.Join(t.TempDir(), "go-instrument-testbin")
 	if err := exec.Command("go", "build", "-cover", "-o", testbin, "main.go").Run(); err != nil {
-		t.Fatalf("Failed to build test binary: %v", err)
+		t.Fatal(err)
 	}
 
 	t.Run("simple panic line numbers preserved", func(t *testing.T) {
-		testPanicScenario(t, testbin, "TestFunc", "testdata/internal/panics.go")
+		testPanicScenario(t, testbin, "TestFunc")
 	})
 
 	t.Run("nested panic line numbers preserved", func(t *testing.T) {
-		testNestedPanicScenario(t, testbin, "Level1", "testdata/internal/panics.go")
+		testPanicScenario(t, testbin, "Level1")
+	})
+
+	t.Run("complex function panic line numbers preserved", func(t *testing.T) {
+		testPanicScenario(t, testbin, "FuncWithBody")
 	})
 }
 
-// testPanicScenario tests a simple panic scenario and compares full stack traces
-func testPanicScenario(t *testing.T, testbin, entryFunc, sourceFile string) {
+func testPanicScenario(t *testing.T, testbin, entryFunc string) {
 	tempDir := t.TempDir()
+	sourceFile := "testdata/internal/panics.go"
 	
-	// Read the source file content
 	sourceBytes, err := os.ReadFile(sourceFile)
 	if err != nil {
-		t.Fatalf("Failed to read source file: %v", err)
+		t.Fatal(err)
 	}
 	
-	// Create original file and main function
-	origContent := string(sourceBytes) + "\n\nfunc main() {\n\t" + entryFunc + "(context.Background())\n}"
+	content := string(sourceBytes) + `
+
+func main() {
+	` + entryFunc + `(context.Background())
+}`
 	origFile := path.Join(tempDir, "test_panic.go")
-	if err := os.WriteFile(origFile, []byte(origContent), 0644); err != nil {
-		t.Fatalf("Failed to write original file: %v", err)
+	if err := os.WriteFile(origFile, []byte(content), 0644); err != nil {
+		t.Fatal(err)
 	}
 
-	// Build and run original version
 	origBinary := path.Join(tempDir, "original_panic")
 	buildCmd := exec.Command("go", "build", "-o", origBinary, "test_panic.go")
 	buildCmd.Dir = tempDir
-	if output, err := buildCmd.CombinedOutput(); err != nil {
-		t.Fatalf("Failed to build original binary: %v\nOutput: %s", err, string(output))
+	if err := buildCmd.Run(); err != nil {
+		t.Fatal(err)
 	}
-
 	origOutput, _ := exec.Command(origBinary).CombinedOutput()
 	
-	// Create instrumented file
 	instrumentedFile := path.Join(tempDir, "test_panic_instrumented.go")
-	if err := os.WriteFile(instrumentedFile, []byte(origContent), 0644); err != nil {
-		t.Fatalf("Failed to write instrumented file: %v", err)
+	if err := os.WriteFile(instrumentedFile, []byte(content), 0644); err != nil {
+		t.Fatal(err)
 	}
 
-	// Instrument the file
 	if err := exec.Command(testbin, "-w", "-filename", instrumentedFile).Run(); err != nil {
-		t.Fatalf("Failed to instrument file: %v", err)
+		t.Fatal(err)
 	}
 
-	// Copy go.mod and go.sum to temp directory for instrumented build
 	goModBytes, _ := os.ReadFile("go.mod")
 	goSumBytes, _ := os.ReadFile("go.sum")
 	os.WriteFile(path.Join(tempDir, "go.mod"), goModBytes, 0644)
 	os.WriteFile(path.Join(tempDir, "go.sum"), goSumBytes, 0644)
 
-	// Download dependencies
 	modCmd := exec.Command("go", "mod", "tidy")
 	modCmd.Dir = tempDir
 	modCmd.Run()
 
-	// Build and run instrumented version
 	instrumentedBinary := path.Join(tempDir, "instrumented_panic")
 	buildCmd = exec.Command("go", "build", "-o", instrumentedBinary, "test_panic_instrumented.go")
 	buildCmd.Dir = tempDir
-	if output, err := buildCmd.CombinedOutput(); err != nil {
-		t.Fatalf("Failed to build instrumented binary: %v\nOutput: %s", err, string(output))
+	if err := buildCmd.Run(); err != nil {
+		t.Fatal(err)
 	}
-
 	instrumentedOutput, _ := exec.Command(instrumentedBinary).CombinedOutput()
 	
-	// Compare full stack traces after normalizing paths
-	normalizedOrig := normalizeStackTrace(string(origOutput))
-	normalizedInstrumented := normalizeStackTrace(string(instrumentedOutput))
-	
-	// Write expected output to testdata file
 	expectedOutputFile := "/home/runner/work/go-instrument/go-instrument/testdata/panic_output.txt"
-	os.WriteFile(expectedOutputFile, []byte(normalizedOrig), 0644)
+	os.WriteFile(expectedOutputFile, origOutput, 0644)
 	
-	if normalizedOrig != normalizedInstrumented {
+	if string(origOutput) != string(instrumentedOutput) {
 		t.Errorf("Panic stack traces don't match")
-		t.Logf("Original:\n%s", normalizedOrig)
-		t.Logf("Instrumented:\n%s", normalizedInstrumented)
-		t.Logf("Expected output written to: %s", expectedOutputFile)
+		t.Logf("Original:\n%s", string(origOutput))
+		t.Logf("Instrumented:\n%s", string(instrumentedOutput))
 	}
-}
-
-// testNestedPanicScenario tests nested function calls with panic and verifies all line numbers
-func testNestedPanicScenario(t *testing.T, testbin, entryFunc, sourceFile string) {
-	tempDir := t.TempDir()
-	
-	// Read the source file content
-	sourceBytes, err := os.ReadFile(sourceFile)
-	if err != nil {
-		t.Fatalf("Failed to read source file: %v", err)
-	}
-	
-	// Create original file with mainNested function
-	origContent := string(sourceBytes) + "\n\nfunc main() {\n\t" + entryFunc + "(context.Background())\n}"
-	origFile := path.Join(tempDir, "test_nested_panic.go")
-	if err := os.WriteFile(origFile, []byte(origContent), 0644); err != nil {
-		t.Fatalf("Failed to write original file: %v", err)
-	}
-
-	// Build and run original version
-	origBinary := path.Join(tempDir, "original_nested_panic")
-	buildCmd := exec.Command("go", "build", "-o", origBinary, "test_nested_panic.go")
-	buildCmd.Dir = tempDir
-	if output, err := buildCmd.CombinedOutput(); err != nil {
-		t.Fatalf("Failed to build original binary: %v\nOutput: %s", err, string(output))
-	}
-
-	origOutput, _ := exec.Command(origBinary).CombinedOutput()
-	
-	// Create instrumented file
-	instrumentedFile := path.Join(tempDir, "test_nested_panic_instrumented.go")
-	if err := os.WriteFile(instrumentedFile, []byte(origContent), 0644); err != nil {
-		t.Fatalf("Failed to write instrumented file: %v", err)
-	}
-
-	// Instrument the file
-	if err := exec.Command(testbin, "-w", "-filename", instrumentedFile).Run(); err != nil {
-		t.Fatalf("Failed to instrument file: %v", err)
-	}
-
-	// Copy go.mod and go.sum to temp directory for instrumented build
-	goModBytes, _ := os.ReadFile("go.mod")
-	goSumBytes, _ := os.ReadFile("go.sum")
-	os.WriteFile(path.Join(tempDir, "go.mod"), goModBytes, 0644)
-	os.WriteFile(path.Join(tempDir, "go.sum"), goSumBytes, 0644)
-
-	// Download dependencies
-	modCmd := exec.Command("go", "mod", "tidy")
-	modCmd.Dir = tempDir
-	modCmd.Run()
-
-	// Build and run instrumented version
-	instrumentedBinary := path.Join(tempDir, "instrumented_nested_panic")
-	buildCmd = exec.Command("go", "build", "-o", instrumentedBinary, "test_nested_panic_instrumented.go")
-	buildCmd.Dir = tempDir
-	if output, err := buildCmd.CombinedOutput(); err != nil {
-		t.Fatalf("Failed to build instrumented binary: %v\nOutput: %s", err, string(output))
-	}
-
-	instrumentedOutput, _ := exec.Command(instrumentedBinary).CombinedOutput()
-	
-	// Verify that all function names and line numbers in call stack are preserved
-	origCallStack := extractCallStackInfo(string(origOutput))
-	instrumentedCallStack := extractCallStackInfo(string(instrumentedOutput))
-	
-	if !compareCallStacks(origCallStack, instrumentedCallStack) {
-		t.Errorf("Call stack line numbers don't match")
-		t.Logf("Original call stack: %+v", origCallStack)
-		t.Logf("Instrumented call stack: %+v", instrumentedCallStack)
-		t.Logf("Original output:\n%s", string(origOutput))
-		t.Logf("Instrumented output:\n%s", string(instrumentedOutput))
-	}
-}
-
-// normalizeStackTrace normalizes file paths and function signatures in stack trace for comparison
-func normalizeStackTrace(output string) string {
-	// Replace absolute paths with relative ones for comparison
-	re := regexp.MustCompile(`/[^/\s]*(/[^/\s]+)*([^/\s]*\.go)`)
-	normalized := re.ReplaceAllString(output, "test.go")
-	
-	// Replace instrumented filenames with generic ones
-	instrumentedRe := regexp.MustCompile(`test_[^/\s]*_instrumented\.go`)
-	normalized = instrumentedRe.ReplaceAllString(normalized, "test.go")
-	
-	// Normalize function signatures - remove context parameters and make consistent
-	funcRe := regexp.MustCompile(`main\.(\w+)\([^)]*\)`)
-	normalized = funcRe.ReplaceAllString(normalized, "main.$1(...)")
-	
-	// Remove hex offsets like "+0x25" or "+0xb4"
-	offsetRe := regexp.MustCompile(` \+0x[0-9a-f]+`)
-	normalized = offsetRe.ReplaceAllString(normalized, "")
-	
-	return normalized
-}
-
-// CallStackFrame represents a frame in the call stack
-type CallStackFrame struct {
-	Function string
-	File     string
-	Line     int
-}
-
-// extractCallStackInfo extracts function names and line numbers from panic output
-func extractCallStackInfo(output string) []CallStackFrame {
-	var frames []CallStackFrame
-	
-	// Look for patterns like "main.Level1(0x..." followed by file:line
-	lines := strings.Split(output, "\n")
-	
-	for i := 0; i < len(lines)-1; i++ {
-		line := strings.TrimSpace(lines[i])
-		
-		// Look for function call pattern
-		if strings.Contains(line, "main.") && strings.Contains(line, "(") {
-			funcMatch := regexp.MustCompile(`main\.(\w+)\(`).FindStringSubmatch(line)
-			if len(funcMatch) >= 2 {
-				funcName := funcMatch[1]
-				
-				// Look for file:line in the next line
-				nextLine := strings.TrimSpace(lines[i+1])
-				fileLineMatch := regexp.MustCompile(`([^/\s]+\.go):(\d+)`).FindStringSubmatch(nextLine)
-				if len(fileLineMatch) >= 3 {
-					if lineNum, err := strconv.Atoi(fileLineMatch[2]); err == nil {
-						frames = append(frames, CallStackFrame{
-							Function: funcName,
-							File:     fileLineMatch[1],
-							Line:     lineNum,
-						})
-					}
-				}
-			}
-		}
-	}
-	
-	return frames
-}
-
-// compareCallStacks compares two call stacks and returns true if they match (allowing 1-line tolerance)
-func compareCallStacks(orig, instrumented []CallStackFrame) bool {
-	if len(orig) != len(instrumented) {
-		return false
-	}
-	
-	for i := range orig {
-		if orig[i].Function != instrumented[i].Function {
-			return false
-		}
-		// Allow 1-line tolerance for line numbers due to instrumentation positioning
-		lineDiff := orig[i].Line - instrumented[i].Line
-		if lineDiff < -1 || lineDiff > 1 {
-			return false
-		}
-	}
-	
-	return true
 }

@@ -12,10 +12,9 @@ import (
 )
 
 type patch struct {
-	pos      token.Pos
-	stmts    []ast.Stmt
-	filename string
-	fnBody   *ast.BlockStmt
+	pos    token.Pos
+	stmts  []ast.Stmt
+	fnBody *ast.BlockStmt
 }
 
 func patchFile(fset *token.FileSet, file *ast.File, patches ...patch) error {
@@ -33,18 +32,19 @@ func patchFile(fset *token.FileSet, file *ast.File, patches ...patch) error {
 	offset := int(file.FileStart) - 1
 	for _, patch := range patches {
 		buf.Reset()
-
 		// Insert the instrumentation statements
 		buf.WriteRune('\n')
 		if err := format.Node(&buf, fset, patch.stmts); err != nil {
 			return err
 		}
 		
-		// Add line directive to preserve original line numbers for the first original statement
-		if patch.fnBody != nil && patch.filename != "" && len(patch.fnBody.List) > 0 {
+		// line directive to preserve original line numbers for the first original statement
+		// https://github.com/golang/go/blob/master/src/cmd/compile/doc.go#L171
+		if patch.fnBody != nil && len(patch.fnBody.List) > 0 {
 			firstStmt := patch.fnBody.List[0]
 			firstStmtPos := fset.Position(firstStmt.Pos())
-			basename := filepath.Base(patch.filename)
+			filename := fset.Position(file.Pos()).Filename
+			basename := filepath.Base(filename)
 			// We want the first statement after the blank line to appear at its original line number
 			// Account for the blank line after the //line directive
 			buf.WriteString(fmt.Sprintf("\n//line %s:%d", basename, firstStmtPos.Line-3))
