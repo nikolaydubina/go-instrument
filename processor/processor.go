@@ -173,7 +173,12 @@ func (p *Processor) Process(fset *token.FileSet, file *ast.File) error {
 
 			hasError, errorName := p.functionHasError(fnType)
 			ps := p.Instrumenter.PrefixStatements(p.SpanName(receiver, fname), contextName, hasError, errorName)
-			patches = append(patches, patch{pos: fnBody.Pos(), stmts: ps})
+			patches = append(patches, patch{
+				pos:      fnBody.Pos(), 
+				stmts:    ps,
+				filename: fset.Position(file.Pos()).Filename,
+				fnBody:   fnBody,
+			})
 		}
 
 		return true

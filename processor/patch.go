@@ -2,16 +2,20 @@ package processor
 
 import (
 	"bytes"
+	"fmt"
 	"go/ast"
 	"go/format"
 	"go/parser"
 	"go/token"
+	"path/filepath"
 	"sort"
 )
 
 type patch struct {
-	pos   token.Pos
-	stmts []ast.Stmt
+	pos      token.Pos
+	stmts    []ast.Stmt
+	filename string
+	fnBody   *ast.BlockStmt
 }
 
 func patchFile(fset *token.FileSet, file *ast.File, patches ...patch) error {
@@ -30,10 +34,21 @@ func patchFile(fset *token.FileSet, file *ast.File, patches ...patch) error {
 	for _, patch := range patches {
 		buf.Reset()
 
+		// Insert the instrumentation statements
 		buf.WriteRune('\n')
 		if err := format.Node(&buf, fset, patch.stmts); err != nil {
 			return err
 		}
+		
+		// Add line directive to preserve original line numbers for the first original statement
+		if patch.fnBody != nil && patch.filename != "" && len(patch.fnBody.List) > 0 {
+			firstStmt := patch.fnBody.List[0]
+			pos := fset.Position(firstStmt.Pos())
+			basename := filepath.Base(patch.filename)
+			// Subtract 1 so that the first statement gets the correct line number
+			buf.WriteString(fmt.Sprintf("\n//line %s:%d", basename, pos.Line-1))
+		}
+		
 		buf.WriteRune('\n')
 
 		pos := int(patch.pos) - offset
