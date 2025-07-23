@@ -36,7 +36,7 @@ func TestApp(t *testing.T) {
 	exec.Command("go", "build", "-cover", "-o", testbin, "main.go").Run()
 
 	t.Run("when basic, then ok", func(t *testing.T) {
-		f := copyFile(t, "./internal/testdata/basic.go")
+		f := copyRand(t, "./internal/testdata/basic.go")
 		cmd := exec.Command(testbin, "-w", "-filename", f)
 		cmd.Env = append(cmd.Environ(), "GOCOVERDIR=./coverage")
 		if err := cmd.Run(); err != nil {
@@ -48,7 +48,7 @@ func TestApp(t *testing.T) {
 	t.Run("skip file", func(t *testing.T) {
 		t.Run("generated file", func(t *testing.T) {
 			file := "./internal/testdata/skipped_generated.go"
-			f := copyFile(t, file)
+			f := copyRand(t, file)
 
 			cmd := exec.Command(testbin, "-w", "-skip-generated=true", "-filename", file)
 			cmd.Env = append(cmd.Environ(), "GOCOVERDIR=./coverage")
@@ -66,7 +66,7 @@ func TestApp(t *testing.T) {
 		}
 		for _, file := range skipFiles {
 			t.Run(file, func(t *testing.T) {
-				f := copyFile(t, file)
+				f := copyRand(t, file)
 
 				cmd := exec.Command(testbin, "-w", "-filename", file)
 				cmd.Env = append(cmd.Environ(), "GOCOVERDIR=./coverage")
@@ -106,7 +106,7 @@ func TestApp(t *testing.T) {
 	})
 
 	t.Run("when already instrumented, then do not instrument", func(t *testing.T) {
-		f := copyFile(t, "./internal/testdata/instrumented/basic.go.exp")
+		f := copyRand(t, "./internal/testdata/instrumented/basic.go.exp")
 
 		cmd := exec.Command(testbin, "-w", "-filename", f)
 		cmd.Env = append(cmd.Environ(), "GOCOVERDIR=./coverage")
@@ -148,11 +148,19 @@ func normalizeLineDirective(line string) string {
 	return line
 }
 
-func copyFile(t *testing.T, from string) string {
+func copyRand(t *testing.T, from string) string {
 	f := path.Join(t.TempDir(), time.Now().Format("20060102-150405-")+strconv.Itoa(rand.Int()))
 	fbytes, _ := os.ReadFile(from)
 	os.WriteFile(f, fbytes, 0644)
 	return f
+}
+
+func copy(from, to string) error {
+	b, err := os.ReadFile(from)
+	if err != nil {
+		return err
+	}
+	return os.WriteFile(to, b, 0644)
 }
 
 func TestPanicLineNumbers(t *testing.T) {
@@ -161,77 +169,61 @@ func TestPanicLineNumbers(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	t.Run("simple panic line numbers preserved", func(t *testing.T) {
-		testPanicScenario(t, testbin, "testdata/internal/panic1")
-	})
-
-	t.Run("nested panic line numbers preserved", func(t *testing.T) {
-		testPanicScenario(t, testbin, "testdata/internal/panic2")
-	})
-
-	t.Run("complex function panic line numbers preserved", func(t *testing.T) {
-		testPanicScenario(t, testbin, "testdata/internal/panic3")
-	})
-}
-
-func testPanicScenario(t *testing.T, testbin, testDir string) {
-	tempDir := t.TempDir()
-
-	sourceFile := path.Join(testDir, "main.go")
-	sourceBytes, err := os.ReadFile(sourceFile)
-	if err != nil {
-		t.Fatal(err)
+	tests := []string{
+		"testdata/internal/panic1/main.go",
+		"testdata/internal/panic2/main.go",
+		"testdata/internal/panic3/main.go",
 	}
+	for _, tc := range tests {
+		dir := t.TempDir()
 
-	originalFile := path.Join(tempDir, "main.go")
-	if err := os.WriteFile(originalFile, sourceBytes, 0644); err != nil {
-		t.Fatal(err)
-	}
+		if err := copy(tc, path.Join(dir, "main.go")); err != nil {
+			t.Fatal(err)
+		}
 
-	originalBinary := path.Join(tempDir, "original_panic")
-	buildCmd := exec.Command("go", "build", "-o", originalBinary, "main.go")
-	buildCmd.Dir = tempDir
-	if err := buildCmd.Run(); err != nil {
-		t.Fatal(err)
-	}
+		originalBinary := path.Join(dir, "original_panic")
+		buildCmd := exec.Command("go", "build", "-o", originalBinary, "main.go")
+		buildCmd.Dir = dir
+		if err := buildCmd.Run(); err != nil {
+			t.Fatal(err)
+		}
 
-	origOutput, _ := exec.Command(originalBinary).CombinedOutput()
+		originalOutput, _ := exec.Command(originalBinary).CombinedOutput()
 
-	instrumentedFile := path.Join(tempDir, "main_instrumented.go")
-	if err := os.WriteFile(instrumentedFile, sourceBytes, 0644); err != nil {
-		t.Fatal(err)
-	}
-	if err := exec.Command(testbin, "-w", "-filename", instrumentedFile).Run(); err != nil {
-		t.Fatal(err)
-	}
+		if err := copy(tc, path.Join(dir, "main_instrumented.go")); err != nil {
+			t.Fatal(err)
+		}
+		if err := exec.Command(testbin, "-w", "-filename", path.Join(dir, "main_instrumented.go")).Run(); err != nil {
+			t.Fatal(err)
+		}
 
-	modCmd := exec.Command("go", "mod", "init", "test_panic_instrumented")
-	modCmd.Dir = tempDir
-	modCmd.Run()
+		modCmd := exec.Command("go", "mod", "init", "test_panic_instrumented")
+		modCmd.Dir = dir
+		modCmd.Run()
 
-	modTidyCmd := exec.Command("go", "mod", "tidy")
-	modTidyCmd.Dir = tempDir
-	modTidyCmd.Run()
+		modTidyCmd := exec.Command("go", "mod", "tidy")
+		modTidyCmd.Dir = dir
+		modTidyCmd.Run()
 
-	instrumentedBinary := path.Join(tempDir, "instrumented_panic")
-	buildCmd = exec.Command("go", "build", "-o", instrumentedBinary, "main_instrumented.go")
-	buildCmd.Dir = tempDir
-	if out, err := buildCmd.CombinedOutput(); err != nil {
-		t.Fatal(err, string(out))
-	}
+		instrumentedBinary := path.Join(dir, "instrumented_panic")
+		buildCmd = exec.Command("go", "build", "-o", instrumentedBinary, "main_instrumented.go")
+		buildCmd.Dir = dir
+		if out, err := buildCmd.CombinedOutput(); err != nil {
+			t.Fatal(err, string(out))
+		}
 
-	instrumentedOutput, _ := exec.Command(instrumentedBinary).CombinedOutput()
+		instrumentedOutput, _ := exec.Command(instrumentedBinary).CombinedOutput()
 
-	originalLines := extractLineNumbers(string(origOutput))
-	instrumentedLines := extractLineNumbers(string(instrumentedOutput))
+		originalLines := extractLineNumbers(string(originalOutput))
+		instrumentedLines := extractLineNumbers(string(instrumentedOutput))
 
-	if !slices.Equal(originalLines, instrumentedLines) {
-		t.Error(originalLines, instrumentedLines, string(origOutput), string(instrumentedOutput))
+		if !slices.Equal(originalLines, instrumentedLines) {
+			t.Error(originalLines, instrumentedLines, string(originalOutput), string(instrumentedOutput))
+		}
 	}
 }
 
-func extractLineNumbers(output string) []int {
-	var lines []int
+func extractLineNumbers(output string) (lines []int) {
 	re := regexp.MustCompile(`\.go:(\d+)`)
 	matches := re.FindAllStringSubmatch(output, -1)
 	for _, match := range matches {

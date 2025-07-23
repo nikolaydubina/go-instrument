@@ -2,30 +2,29 @@ package main
 
 import "context"
 
-// Nested function calls for testing call stack line numbers
-func Level1(ctx context.Context) error {
-	// This is line 7
-	return Level2(ctx) // Line 8
+func Level1(ctx context.Context) func() error {
+	return func() error {
+		return Level2(ctx, 0)
+	}
 }
 
-func Level2(ctx context.Context) error {
-	// This is line 12
-	return Level3(ctx) // Line 13
+func Level2(ctx context.Context, i int) error {
+	if i >= 5 {
+		return Level3(ctx)
+	}
+	return Level2(ctx, i+1)
 }
 
 func Level3(ctx context.Context) error {
-	// This is line 17
-	// This is line 18
-	panic("nested panic on line 19") // Line 19
+	panic("line 19")
 }
 
-// Function with complex body containing loops and conditionals
 func FuncWithBody(ctx context.Context) error {
 	i := 1
 
 	for j := i; j < 100; j++ {
 		if j%13 == 2 {
-			return Level3(ctx) // This should report correct line number
+			return Level1(ctx)()
 		}
 	}
 

@@ -40,7 +40,7 @@ func patchFile(fset *token.FileSet, file *ast.File, patches ...patch) error {
 
 		buf.WriteRune('\n')
 
-		// Add line directive to preserve original line numbers for the first original statement
+		// line directives to preserve line numbers of functions (for accurate panic stack traces)
 		// https://github.com/golang/go/blob/master/src/cmd/compile/doc.go#L171
 		if patch.fnBody != nil && len(patch.fnBody.List) > 0 {
 			firstStmt := patch.fnBody.List[0]
@@ -50,7 +50,7 @@ func patchFile(fset *token.FileSet, file *ast.File, patches ...patch) error {
 			buf.WriteString("//line ")
 			buf.WriteString(filename)
 			buf.WriteString(":")
-			buf.WriteString(strconv.Itoa(pos.Line))
+			buf.WriteString(strconv.Itoa(pos.Line - 1))
 			buf.WriteRune('\n')
 		}
 
