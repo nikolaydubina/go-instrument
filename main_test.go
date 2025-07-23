@@ -177,14 +177,12 @@ func TestPanicLineNumbers(t *testing.T) {
 func testPanicScenario(t *testing.T, testbin, testDir string) {
 	tempDir := t.TempDir()
 
-	// Copy the static test file
 	sourceFile := path.Join(testDir, "main.go")
 	sourceBytes, err := os.ReadFile(sourceFile)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	// Build original (non-instrumented) binary
 	originalFile := path.Join(tempDir, "main.go")
 	if err := os.WriteFile(originalFile, sourceBytes, 0644); err != nil {
 		t.Fatal(err)
@@ -199,7 +197,6 @@ func testPanicScenario(t *testing.T, testbin, testDir string) {
 
 	origOutput, _ := exec.Command(originalBinary).CombinedOutput()
 
-	// Build instrumented binary
 	instrumentedFile := path.Join(tempDir, "main_instrumented.go")
 	if err := os.WriteFile(instrumentedFile, sourceBytes, 0644); err != nil {
 		t.Fatal(err)

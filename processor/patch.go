@@ -2,14 +2,12 @@ package processor
 
 import (
 	"bytes"
-	"fmt"
 	"go/ast"
 	"go/format"
 	"go/parser"
 	"go/token"
-	"path/filepath"
 	"sort"
-	"strings"
+	"strconv"
 )
 
 type patch struct {
@@ -39,25 +37,22 @@ func patchFile(fset *token.FileSet, file *ast.File, patches ...patch) error {
 		if err := format.Node(&buf, fset, patch.stmts); err != nil {
 			return err
 		}
-		
+
+		buf.WriteRune('\n')
+
 		// Add line directive to preserve original line numbers for the first original statement
+		// TODO: try to move this before function declaration
 		if patch.fnBody != nil && len(patch.fnBody.List) > 0 {
 			firstStmt := patch.fnBody.List[0]
 			pos := fset.Position(firstStmt.Pos())
 			filename := fset.Position(file.Pos()).Filename
-			basename := filepath.Base(filename)
-			
-			// If this looks like an instrumented file (ends with _instrumented.go), 
-			// use the original filename for line directives
-			if strings.HasSuffix(basename, "_instrumented.go") {
-				basename = strings.TrimSuffix(basename, "_instrumented.go") + ".go"
-			}
-			
-			// Subtract 1 so that the first statement gets the correct line number
-			buf.WriteString(fmt.Sprintf("\n//line %s:%d", basename, pos.Line-1))
+
+			buf.WriteString("//line ")
+			buf.WriteString(filename)
+			buf.WriteString(":")
+			buf.WriteString(strconv.Itoa(pos.Line))
+			buf.WriteRune('\n')
 		}
-		
-		buf.WriteRune('\n')
 
 		pos := int(patch.pos) - offset
 		src = append(src[:pos], append(buf.Bytes(), src[pos:]...)...)

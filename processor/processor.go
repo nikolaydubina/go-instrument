@@ -173,19 +173,9 @@ func (p *Processor) Process(fset *token.FileSet, file *ast.File) error {
 
 			hasError, errorName := p.functionHasError(fnType)
 			ps := p.Instrumenter.PrefixStatements(p.SpanName(receiver, fname), contextName, hasError, errorName)
-			patches = append(patches, patch{
-				pos:    fnBody.Pos(),
-				stmts:  ps,
-				fnBody: fnBody,
-			})
+			patches = append(patches, patch{pos: fnBody.Pos(), stmts: ps, fnBody: fnBody})
 		} else if fnBody != nil {
-			// For functions without context parameter, add empty patch with line directive
-			// to preserve line numbers when imports are added
-			patches = append(patches, patch{
-				pos:    fnBody.Pos(),
-				stmts:  nil,
-				fnBody: fnBody,
-			})
+			patches = append(patches, patch{pos: fnBody.Pos(), stmts: nil, fnBody: fnBody})
 		}
 
 		return true
