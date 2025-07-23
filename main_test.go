@@ -162,50 +162,46 @@ func TestPanicLineNumbers(t *testing.T) {
 	}
 
 	t.Run("simple panic line numbers preserved", func(t *testing.T) {
-		testPanicScenario(t, testbin, "TestFunc")
+		testPanicScenario(t, testbin, "testdata/internal/panic1")
 	})
 
 	t.Run("nested panic line numbers preserved", func(t *testing.T) {
-		testPanicScenario(t, testbin, "Level1")
+		testPanicScenario(t, testbin, "testdata/internal/panic2")
 	})
 
 	t.Run("complex function panic line numbers preserved", func(t *testing.T) {
-		testPanicScenario(t, testbin, "FuncWithBody")
+		testPanicScenario(t, testbin, "testdata/internal/panic3")
 	})
 }
 
-func testPanicScenario(t *testing.T, testbin, entryFunc string) {
+func testPanicScenario(t *testing.T, testbin, testDir string) {
 	tempDir := t.TempDir()
 
-	sourceFile := "testdata/internal/panics.go"
+	// Copy the static test file
+	sourceFile := path.Join(testDir, "main.go")
 	sourceBytes, err := os.ReadFile(sourceFile)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	content := string(sourceBytes) + `
-
-func main() {
-	` + entryFunc + `(context.Background())
-}`
-	originalFile := path.Join(tempDir, "test_panic.go")
-	if err := os.WriteFile(originalFile, []byte(content), 0644); err != nil {
+	// Build original (non-instrumented) binary
+	originalFile := path.Join(tempDir, "main.go")
+	if err := os.WriteFile(originalFile, sourceBytes, 0644); err != nil {
 		t.Fatal(err)
 	}
 
 	originalBinary := path.Join(tempDir, "original_panic")
-
-	buildCmd := exec.Command("go", "build", "-o", originalBinary, "test_panic.go")
+	buildCmd := exec.Command("go", "build", "-o", originalBinary, "main.go")
 	buildCmd.Dir = tempDir
-
 	if err := buildCmd.Run(); err != nil {
 		t.Fatal(err)
 	}
 
 	origOutput, _ := exec.Command(originalBinary).CombinedOutput()
 
-	instrumentedFile := path.Join(tempDir, "test_panic_instrumented.go")
-	if err := os.WriteFile(instrumentedFile, []byte(content), 0644); err != nil {
+	// Build instrumented binary
+	instrumentedFile := path.Join(tempDir, "main_instrumented.go")
+	if err := os.WriteFile(instrumentedFile, sourceBytes, 0644); err != nil {
 		t.Fatal(err)
 	}
 	if err := exec.Command(testbin, "-w", "-filename", instrumentedFile).Run(); err != nil {
@@ -221,8 +217,7 @@ func main() {
 	modTidyCmd.Run()
 
 	instrumentedBinary := path.Join(tempDir, "instrumented_panic")
-
-	buildCmd = exec.Command("go", "build", "-o", instrumentedBinary, "test_panic_instrumented.go")
+	buildCmd = exec.Command("go", "build", "-o", instrumentedBinary, "main_instrumented.go")
 	buildCmd.Dir = tempDir
 	if out, err := buildCmd.CombinedOutput(); err != nil {
 		t.Fatal(err, string(out))

@@ -33,21 +33,17 @@ func patchFile(fset *token.FileSet, file *ast.File, patches ...patch) error {
 	offset := int(file.FileStart) - 1
 	for _, patch := range patches {
 		buf.Reset()
-		
-		if patch.stmts != nil {
-			// Insert the instrumentation statements
-			buf.WriteRune('\n')
-			if err := format.Node(&buf, fset, patch.stmts); err != nil {
-				return err
-			}
-		}
 
-		// line directive to preserve original line numbers for the first original statement
-		// https://github.com/golang/go/blob/master/src/cmd/compile/doc.go#L171
+		// Insert the instrumentation statements
+		buf.WriteRune('\n')
+		if err := format.Node(&buf, fset, patch.stmts); err != nil {
+			return err
+		}
+		
+		// Add line directive to preserve original line numbers for the first original statement
 		if patch.fnBody != nil && len(patch.fnBody.List) > 0 {
-			// Use the function body position, not the first statement position
-			// This gives us the line immediately after the opening brace
-			fnBodyPos := fset.Position(patch.fnBody.Pos())
+			firstStmt := patch.fnBody.List[0]
+			pos := fset.Position(firstStmt.Pos())
 			filename := fset.Position(file.Pos()).Filename
 			basename := filepath.Base(filename)
 			
@@ -57,18 +53,16 @@ func patchFile(fset *token.FileSet, file *ast.File, patches ...patch) error {
 				basename = strings.TrimSuffix(basename, "_instrumented.go") + ".go"
 			}
 			
-			// The first line in the function body should be fnBodyPos.Line + 1
-			// So the line directive should specify that line number
-			firstLineNum := fnBodyPos.Line + 1
-			buf.WriteString(fmt.Sprintf("\n//line %s:%d", basename, firstLineNum))
+			// Subtract 1 so that the first statement gets the correct line number
+			buf.WriteString(fmt.Sprintf("\n//line %s:%d", basename, pos.Line-1))
 		}
+		
+		buf.WriteRune('\n')
 
-		if buf.Len() > 0 {
-			pos := int(patch.pos) - offset
-			src = append(src[:pos], append(buf.Bytes(), src[pos:]...)...)
-			// patch positions after need to be shifted up relative to updates in src by buffer
-			offset -= buf.Len()
-		}
+		pos := int(patch.pos) - offset
+		src = append(src[:pos], append(buf.Bytes(), src[pos:]...)...)
+		// patch positions after need to be shifted up relative to updates in src by buffer
+		offset -= buf.Len()
 	}
 
 	nfile, err := parser.ParseFile(fset, fset.Position(file.Pos()).Filename, src, parser.ParseComments)
