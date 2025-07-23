@@ -167,21 +167,17 @@ func TestPanicLineNumbers(t *testing.T) {
 	t.Run("nested panic line numbers preserved", func(t *testing.T) {
 		testPanicScenario(t, testbin, "Level1")
 	})
-
 	t.Run("complex function panic line numbers preserved", func(t *testing.T) {
 		testPanicScenario(t, testbin, "FuncWithBody")
 	})
 }
-
 func testPanicScenario(t *testing.T, testbin, entryFunc string) {
 	tempDir := t.TempDir()
 	sourceFile := "testdata/internal/panics.go"
-	
 	sourceBytes, err := os.ReadFile(sourceFile)
 	if err != nil {
 		t.Fatal(err)
 	}
-	
 	content := string(sourceBytes) + `
 
 func main() {
@@ -191,7 +187,6 @@ func main() {
 	if err := os.WriteFile(origFile, []byte(content), 0644); err != nil {
 		t.Fatal(err)
 	}
-
 	origBinary := path.Join(tempDir, "original_panic")
 	buildCmd := exec.Command("go", "build", "-o", origBinary, "test_panic.go")
 	buildCmd.Dir = tempDir
@@ -199,25 +194,20 @@ func main() {
 		t.Fatal(err)
 	}
 	origOutput, _ := exec.Command(origBinary).CombinedOutput()
-	
 	instrumentedFile := path.Join(tempDir, "test_panic_instrumented.go")
 	if err := os.WriteFile(instrumentedFile, []byte(content), 0644); err != nil {
 		t.Fatal(err)
 	}
-
 	if err := exec.Command(testbin, "-w", "-filename", instrumentedFile).Run(); err != nil {
 		t.Fatal(err)
 	}
-
 	goModBytes, _ := os.ReadFile("go.mod")
 	goSumBytes, _ := os.ReadFile("go.sum")
 	os.WriteFile(path.Join(tempDir, "go.mod"), goModBytes, 0644)
 	os.WriteFile(path.Join(tempDir, "go.sum"), goSumBytes, 0644)
-
 	modCmd := exec.Command("go", "mod", "tidy")
 	modCmd.Dir = tempDir
 	modCmd.Run()
-
 	instrumentedBinary := path.Join(tempDir, "instrumented_panic")
 	buildCmd = exec.Command("go", "build", "-o", instrumentedBinary, "test_panic_instrumented.go")
 	buildCmd.Dir = tempDir
@@ -225,11 +215,9 @@ func main() {
 		t.Fatal(err)
 	}
 	instrumentedOutput, _ := exec.Command(instrumentedBinary).CombinedOutput()
-	
 	// Extract line numbers from both outputs to verify preservation
 	origLines := extractLineNumbers(string(origOutput))
 	instrumentedLines := extractLineNumbers(string(instrumentedOutput))
-	
 	expectedOutputFile := "/home/runner/work/go-instrument/go-instrument/testdata/panic_output.txt"
 	os.WriteFile(expectedOutputFile, origOutput, 0644)
 	
