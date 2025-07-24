@@ -65,19 +65,19 @@ func patchFile(fset *token.FileSet, file *ast.File, patches ...patch) error {
 
 // cleanupLineDirectives removes whitespace between /*line*/ directives and following statements
 func cleanupLineDirectives(src []byte) []byte {
+	var buf bytes.Buffer
 	lines := bytes.Split(src, []byte("\n"))
-	var newLines [][]byte
 
 	for i := 0; i < len(lines); i++ {
 		line := lines[i]
 
-		// Check if this line contains ONLY a /*line*/ directive (with optional whitespace)
 		trimmed := bytes.TrimSpace(line)
-		if bytes.HasPrefix(trimmed, []byte("/*line ")) && bytes.HasSuffix(trimmed, []byte("*/")) {
+
+		if isLineDirective := bytes.HasPrefix(trimmed, []byte("/*line ")) && bytes.HasSuffix(trimmed, []byte("*/")); isLineDirective {
 			// This line has only a line directive
 			// Find the next non-empty, non-comment line
 			var nextContentLine []byte
-			var nextContentIndex int = -1
+			var nextContentIndex = -1
 
 			for j := i + 1; j < len(lines); j++ {
 				nextLine := lines[j]
@@ -95,31 +95,32 @@ func cleanupLineDirectives(src []byte) []byte {
 			}
 
 			if nextContentIndex != -1 {
-				// Combine the directive with the content line
-				// Get the indentation from the content line
 				contentTrimmed := bytes.TrimLeft(nextContentLine, " \t")
 				indentation := nextContentLine[:len(nextContentLine)-len(contentTrimmed)]
 
-				// Create combined line: indentation + directive + content
-				combinedLine := make([]byte, 0, len(indentation)+len(trimmed)+len(contentTrimmed))
-				combinedLine = append(combinedLine, indentation...)
-				combinedLine = append(combinedLine, trimmed...)
-				combinedLine = append(combinedLine, contentTrimmed...)
+				if buf.Len() > 0 {
+					buf.WriteByte('\n')
+				}
+				buf.Write(indentation)
+				buf.Write(trimmed)
+				buf.Write(contentTrimmed)
 
-				newLines = append(newLines, combinedLine)
-
-				// Skip all lines up to and including the content line
 				i = nextContentIndex
 			} else {
-				// No content found, just add the directive line as-is
-				newLines = append(newLines, line)
+				if buf.Len() > 0 {
+					buf.WriteByte('\n')
+				}
+				buf.Write(line)
 			}
 		} else {
-			newLines = append(newLines, line)
+			if buf.Len() > 0 {
+				buf.WriteByte('\n')
+			}
+			buf.Write(line)
 		}
 	}
 
-	return bytes.Join(newLines, []byte("\n"))
+	return buf.Bytes()
 }
 
 func formatNodeToBytes(fset *token.FileSet, node any) ([]byte, error) {
