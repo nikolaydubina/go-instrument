@@ -2,7 +2,6 @@ package processor
 
 import (
 	"bytes"
-	"fmt"
 	"go/ast"
 	"go/format"
 	"go/parser"
@@ -32,7 +31,7 @@ func patchFile(fset *token.FileSet, file *ast.File, patches ...patch) error {
 	for _, patch := range patches {
 		buf.Reset()
 
-		if patch.stmts != nil {
+		if len(patch.stmts) > 0 {
 			buf.WriteRune('\n')
 			if err := format.Node(&buf, fset, patch.stmts); err != nil {
 				return err
@@ -41,12 +40,10 @@ func patchFile(fset *token.FileSet, file *ast.File, patches ...patch) error {
 
 		// line directives to preserve line numbers of functions (for accurate panic stack traces)
 		// https://github.com/golang/go/blob/master/src/cmd/compile/doc.go#L171
-		if patch.fnBody != nil && len(patch.fnBody.List) > 0 && patch.stmts != nil {
-			firstStmt := patch.fnBody.List[0]
-			firstStmtPos := fset.Position(firstStmt.Pos())
-			filename := fset.Position(file.Pos()).Filename
-
-			buf.WriteString(fmt.Sprintf("\n/*line %s:%d:%d*/", filename, firstStmtPos.Line, firstStmtPos.Column))
+		if patch.fnBody != nil && len(patch.fnBody.List) > 0 && len(patch.stmts) > 0 {
+			buf.WriteString("\n/*line ")
+			buf.WriteString(fset.Position(patch.fnBody.List[0].Pos()).String())
+			buf.WriteString("*/\n")
 		}
 
 		pos := int(patch.pos) - offset
