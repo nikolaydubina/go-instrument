@@ -117,7 +117,7 @@ func TestApp(t *testing.T) {
 
 	t.Run("when already instrumented, then do not instrument", func(t *testing.T) {
 		f := randFileName(t)
-		if err := copy("./internal/testdata/instrumented/basic.go", f); err != nil {
+		if err := copy("./internal/testdata/instrumented/basic.go.exp", f); err != nil {
 			t.Fatal(err)
 		}
 
