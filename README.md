@@ -44,20 +44,6 @@ Example HTTP server [go-instrument-example](https://github.com/nikolaydubina/go-
 This tool uses standard Go library to modify AST with instrumentation.
 You can add new instrumentations by defining your own `Instrumenter` and invoking `Processor` like it is done in `main`.
 
-## Features
-
-- [x] no dependencies
-- [x] 500 LOC
-- [x] OpenTelemetry
-- [x] functions that have named error return will get spans with span status set to error
-- [x] keeps comments
-- [x] Go build constraints[^1]
-- [x] detection if function is already instrumented
-- [x] dynamic variable name
-- [ ] chaning un-named error return to named error return 
-- [ ] changing `_` to `ctx`
-- [ ] remove added instrumentation
-
 ## Motivation
 
 It is laborious to add tracing code to every function manually.
@@ -230,5 +216,4 @@ async fn write(stream: &mut TcpStream) -> io::Result<usize> {
 - not wrapping exported functions. typically, packages are failry big and performs lots of logic. oftencase, business domains are split only in few large packages. low level packages are already likely to be traced with standard tracing (MySQL, `het/http`, etc). thus, it is doubtful how much benefit would be from tracing only exported functions and only on import
 - not wrapping exported functions with separate package, because this would lead to circular dependency failure, since some even exported functions in original package may be called withing same package. thus, we would either skip those calls, or fail with circular dependency while trying to wrap those.
 
-[^1]: https://pkg.go.dev/cmd/go#hdr-Build_constraints
 [^2]: https://go.dev/doc/diagnostics
