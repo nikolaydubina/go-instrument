@@ -36,7 +36,11 @@ func TestApp(t *testing.T) {
 	exec.Command("go", "build", "-cover", "-o", testbin, "main.go").Run()
 
 	t.Run("when basic, then ok", func(t *testing.T) {
-		f := copyRand(t, "./internal/testdata/basic.go")
+		f := randFileName(t)
+		if err := copy("./internal/testdata/basic.go", f); err != nil {
+			t.Fatal(err)
+		}
+
 		cmd := exec.Command(testbin, "-w", "-filename", f)
 		cmd.Env = append(cmd.Environ(), "GOCOVERDIR=./coverage")
 		if err := cmd.Run(); err != nil {
@@ -48,7 +52,10 @@ func TestApp(t *testing.T) {
 	t.Run("skip file", func(t *testing.T) {
 		t.Run("generated file", func(t *testing.T) {
 			file := "./internal/testdata/skipped_generated.go"
-			f := copyRand(t, file)
+			f := randFileName(t)
+			if err := copy(file, f); err != nil {
+				t.Fatal(err)
+			}
 
 			cmd := exec.Command(testbin, "-w", "-skip-generated=true", "-filename", file)
 			cmd.Env = append(cmd.Environ(), "GOCOVERDIR=./coverage")
@@ -66,7 +73,10 @@ func TestApp(t *testing.T) {
 		}
 		for _, file := range skipFiles {
 			t.Run(file, func(t *testing.T) {
-				f := copyRand(t, file)
+				f := randFileName(t)
+				if err := copy(file, f); err != nil {
+					t.Fatal(err)
+				}
 
 				cmd := exec.Command(testbin, "-w", "-filename", file)
 				cmd.Env = append(cmd.Environ(), "GOCOVERDIR=./coverage")
@@ -106,7 +116,10 @@ func TestApp(t *testing.T) {
 	})
 
 	t.Run("when already instrumented, then do not instrument", func(t *testing.T) {
-		f := copyRand(t, "./internal/testdata/instrumented/basic.go.exp")
+		f := randFileName(t)
+		if err := copy("./internal/testdata/instrumented/basic.go", f); err != nil {
+			t.Fatal(err)
+		}
 
 		cmd := exec.Command(testbin, "-w", "-filename", f)
 		cmd.Env = append(cmd.Environ(), "GOCOVERDIR=./coverage")
@@ -153,21 +166,6 @@ func normalizeLineDirective(line string) string {
 		return re.ReplaceAllString(line, "/*line FILE:$1:$2*/")
 	}
 	return line
-}
-
-func copyRand(t *testing.T, from string) string {
-	f := path.Join(t.TempDir(), time.Now().Format("20060102-150405-")+strconv.Itoa(rand.Int()))
-	fbytes, _ := os.ReadFile(from)
-	os.WriteFile(f, fbytes, 0644)
-	return f
-}
-
-func copy(from, to string) error {
-	b, err := os.ReadFile(from)
-	if err != nil {
-		return err
-	}
-	return os.WriteFile(to, b, 0644)
 }
 
 func TestPanicLineNumbers(t *testing.T) {
@@ -241,4 +239,16 @@ func extractLineNumbers(output string) (lines []int) {
 		}
 	}
 	return lines
+}
+
+func randFileName(t *testing.T) string {
+	return path.Join(t.TempDir(), time.Now().Format("20060102-150405-")+strconv.Itoa(rand.Int())+".go")
+}
+
+func copy(from, to string) error {
+	b, err := os.ReadFile(from)
+	if err != nil {
+		return err
+	}
+	return os.WriteFile(to, b, 0644)
 }
