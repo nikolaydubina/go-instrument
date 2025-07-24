@@ -136,14 +136,21 @@ func assertEqFile(t *testing.T, a, b string) {
 	}
 }
 
-// normalizeLineDirective replaces the filename in //line directives with "FILE"
+// normalizeLineDirective replaces the filename in line directives with "FILE"
 // so that comparisons focus on line numbers, not temp filenames
 func normalizeLineDirective(line string) string {
+	// Handle //line directives
 	if strings.HasPrefix(line, "//line ") {
 		parts := strings.Split(line, ":")
 		if len(parts) == 2 {
 			return "//line FILE:" + parts[1]
 		}
+	}
+	// Handle /*line*/ directives
+	if strings.Contains(line, "/*line ") {
+		// Find the pattern /*line filename:line:col*/
+		re := regexp.MustCompile(`/\*line\s+[^:]+:(\d+):(\d+)\*/`)
+		return re.ReplaceAllString(line, "/*line FILE:$1:$2*/")
 	}
 	return line
 }
