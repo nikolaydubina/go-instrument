@@ -17,7 +17,7 @@ type patch struct {
 }
 
 func patchFile(fset *token.FileSet, file *ast.File, patches ...patch) error {
-	// Patches must be applied in the ascending order, otherwise the
+	// patches must be applied in the ascending order, otherwise the
 	// modified source file will become corrupted.
 	sort.Slice(patches, func(i, j int) bool { return patches[i].pos < patches[j].pos })
 
@@ -32,7 +32,6 @@ func patchFile(fset *token.FileSet, file *ast.File, patches ...patch) error {
 	for _, patch := range patches {
 		buf.Reset()
 
-		// Insert the instrumentation statements
 		if patch.stmts != nil {
 			buf.WriteRune('\n')
 			if err := format.Node(&buf, fset, patch.stmts); err != nil {
@@ -56,8 +55,7 @@ func patchFile(fset *token.FileSet, file *ast.File, patches ...patch) error {
 		offset -= buf.Len()
 	}
 
-	// Post-process the source to ensure line directives are immediately before statements
-	// This removes any whitespace between /*line*/ directives and the following statements
+	// post-process the source to ensure line directives are immediately before statements
 	src = cleanupLineDirectives(src)
 
 	nfile, err := parser.ParseFile(fset, fset.Position(file.Pos()).Filename, src, parser.ParseComments)
@@ -73,10 +71,10 @@ func patchFile(fset *token.FileSet, file *ast.File, patches ...patch) error {
 func cleanupLineDirectives(src []byte) []byte {
 	lines := bytes.Split(src, []byte("\n"))
 	var newLines [][]byte
-	
+
 	for i := 0; i < len(lines); i++ {
 		line := lines[i]
-		
+
 		// Check if this line contains ONLY a /*line*/ directive (with optional whitespace)
 		trimmed := bytes.TrimSpace(line)
 		if bytes.HasPrefix(trimmed, []byte("/*line ")) && bytes.HasSuffix(trimmed, []byte("*/")) {
@@ -84,37 +82,37 @@ func cleanupLineDirectives(src []byte) []byte {
 			// Find the next non-empty, non-comment line
 			var nextContentLine []byte
 			var nextContentIndex int = -1
-			
+
 			for j := i + 1; j < len(lines); j++ {
 				nextLine := lines[j]
 				nextTrimmed := bytes.TrimSpace(nextLine)
-				
+
 				// Skip empty lines and comment-only lines that start with //
 				if len(nextTrimmed) == 0 || bytes.HasPrefix(nextTrimmed, []byte("//")) {
 					continue
 				}
-				
+
 				// Found the next content line
 				nextContentLine = nextLine
 				nextContentIndex = j
 				break
 			}
-			
+
 			if nextContentIndex != -1 {
 				// Combine the directive with the content line
 				// Get the indentation from the content line
 				contentTrimmed := bytes.TrimLeft(nextContentLine, " \t")
 				indentation := nextContentLine[:len(nextContentLine)-len(contentTrimmed)]
-				
+
 				// Create combined line: indentation + directive + content
 				combinedLine := make([]byte, 0, len(indentation)+len(trimmed)+len(contentTrimmed))
 				combinedLine = append(combinedLine, indentation...)
 				combinedLine = append(combinedLine, trimmed...)
 				combinedLine = append(combinedLine, contentTrimmed...)
-				
+
 				newLines = append(newLines, combinedLine)
-				
-				// Skip all lines up to and including the content line  
+
+				// Skip all lines up to and including the content line
 				i = nextContentIndex
 			} else {
 				// No content found, just add the directive line as-is
@@ -124,7 +122,7 @@ func cleanupLineDirectives(src []byte) []byte {
 			newLines = append(newLines, line)
 		}
 	}
-	
+
 	return bytes.Join(newLines, []byte("\n"))
 }
 
