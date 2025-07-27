@@ -26,7 +26,7 @@ func main() {
 	flag.StringVar(&app, "app", "app", "name of application")
 	flag.BoolVar(&overwrite, "w", false, "overwrite original file")
 	flag.BoolVar(&skipGenerated, "skip-generated", false, "skip generated files")
-	flag.BoolVar(&preserveLineNumbers, "preserve-line-numbers", true, "user compile directives to preserve liner numbers as if no instrumentation was applied (e.g. keep same line numbers in panic as if no instrumentation)")
+	flag.BoolVar(&preserveLineNumbers, "preserve-line-numbers", true, "use compile directives to preserve line numbers as if no instrumentation was applied (e.g. keep same line numbers in panic as if no instrumentation)")
 	flag.Parse()
 
 	if err := process(fileName, app, overwrite, skipGenerated, preserveLineNumbers); err != nil {

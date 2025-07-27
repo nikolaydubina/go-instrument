@@ -22,6 +22,7 @@ func AnonymousFunc() func(ctx context.Context) (name string, err error) {
 				span.RecordError(err)
 			}
 		}()
+
 		return "fluffer", nil
 	}
 }
@@ -29,6 +30,7 @@ func AnonymousFunc() func(ctx context.Context) (name string, err error) {
 func AnonymousFuncSkippedNoContext(ctx context.Context) func() (name string, err error) {
 	ctx, span := otel.Tracer("app").Start(ctx, "AnonymousFuncSkippedNoContext")
 	defer span.End()
+
 	return func() (name string, err error) {
 		return "fluffer", nil
 	}
@@ -37,6 +39,7 @@ func AnonymousFuncSkippedNoContext(ctx context.Context) func() (name string, err
 func AnonymousFuncSkippedAnonymousContext(ctx context.Context) func(_ context.Context) (name string, err error) {
 	ctx, span := otel.Tracer("app").Start(ctx, "AnonymousFuncSkippedAnonymousContext")
 	defer span.End()
+
 	return func(_ context.Context) (name string, err error) {
 		return "fluffer", nil
 	}
@@ -53,6 +56,7 @@ func (s Cat) Name(ctx context.Context) (name string, err error) {
 			span.RecordError(err)
 		}
 	}()
+
 	return "fluffer", nil
 }
 
@@ -67,6 +71,7 @@ func (s *Apple) MethodWithPointerReciver(ctx context.Context, a int) (err error)
 			span.RecordError(err)
 		}
 	}()
+
 	return nil
 }
 
@@ -79,6 +84,7 @@ func (s Apple) MethodWithValueReciver(ctx context.Context, a int) (err error) {
 			span.RecordError(err)
 		}
 	}()
+
 	return nil
 }
 
@@ -91,6 +97,7 @@ func (*Apple) MethodWithPointerReciverUnnamed(ctx context.Context, a int) (err e
 			span.RecordError(err)
 		}
 	}()
+
 	return nil
 }
 
@@ -103,6 +110,7 @@ func (Apple) MethodWithValueReciverUnnamed(ctx context.Context, a int) (err erro
 			span.RecordError(err)
 		}
 	}()
+
 	return nil
 }
 
@@ -115,6 +123,7 @@ func (s *Apple) MethodWithCustomErrorName(ctx context.Context, a int) (errXYZ er
 			span.RecordError(errXYZ)
 		}
 	}()
+
 	return nil
 }
 
@@ -127,6 +136,7 @@ func (s *Apple) MethodWithCustomContextName(myContext context.Context, a int) (e
 			span.RecordError(err)
 		}
 	}()
+
 	return nil
 }
 
@@ -137,6 +147,7 @@ func (s *Apple) MethodWithAnonymousContext(_ context.Context, a int) (err error)
 func Fib(ctx context.Context, n int) int {
 	ctx, span := otel.Tracer("app").Start(ctx, "Fib")
 	defer span.End()
+
 	if n == 0 || n == 1 {
 		return 1
 	}
@@ -152,12 +163,16 @@ func Basic(ctx context.Context) (err error) {
 			span.RecordError(err)
 		}
 	}()
+
 	return nil
 }
 
 func Comment(ctx context.Context) int {
 	ctx, span := otel.Tracer("app").Start(ctx, "Comment")
 	defer span.End()
+
+	// some-comment first line
+	// some-comment second line
 	return 43
 }
 
@@ -197,6 +212,7 @@ func CustomName(b int, specialCtx context.Context) (specialErr error) {
 			span.RecordError(specialErr)
 		}
 	}()
+
 	return nil
 }
 
@@ -209,6 +225,7 @@ func MultipleContextMultipleError(a context.Context, b context.Context) (erra er
 			span.RecordError(erra)
 		}
 	}()
+
 	return nil, nil
 }
 
@@ -219,12 +236,14 @@ func MultipleContextMultipleErrorCollapsed(a, b context.Context) (erra, errob er
 func MultipleErrorNotNamed(ctx context.Context) (error, error) {
 	ctx, span := otel.Tracer("app").Start(ctx, "MultipleErrorNotNamed")
 	defer span.End()
+
 	return nil, nil
 }
 
 func Closure(ctx context.Context) (int, error) {
 	ctx, span := otel.Tracer("app").Start(ctx, "Closure")
 	defer span.End()
+
 	a := func(x int) (int, error) { return x + 1, nil }
 	return a(5)
 }
@@ -232,9 +251,11 @@ func Closure(ctx context.Context) (int, error) {
 func FunctionCallingAnonymousFunc(ctx context.Context) error {
 	ctx, span := otel.Tracer("app").Start(ctx, "FunctionCallingAnonymousFunc")
 	defer span.End()
+
 	if err := Exec(ctx, func(ctx context.Context) error {
 		ctx, span := otel.Tracer("app").Start(ctx, "anonymous")
 		defer span.End()
+
 		return nil
 	}); err != nil {
 		return err
@@ -245,5 +266,6 @@ func FunctionCallingAnonymousFunc(ctx context.Context) error {
 func Exec(ctx context.Context, fn func(ctx context.Context) error) error {
 	ctx, span := otel.Tracer("app").Start(ctx, "Exec")
 	defer span.End()
+
 	return fn(ctx)
 }

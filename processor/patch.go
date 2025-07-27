@@ -35,14 +35,16 @@ func patchFile(fset *token.FileSet, file *ast.File, preserveLineNumbers bool, pa
 			if err := format.Node(&buf, fset, patch.stmts); err != nil {
 				return err
 			}
-		}
 
-		// line directives to preserve line numbers of functions (for accurate panic stack traces)
-		// https://github.com/golang/go/blob/master/src/cmd/compile/doc.go#L171
-		if preserveLineNumbers && patch.fnBody != nil && len(patch.fnBody.List) > 0 && len(patch.stmts) > 0 {
-			buf.WriteString("\n/*line ")
-			buf.WriteString(fset.Position(patch.fnBody.List[0].Pos()).String())
-			buf.WriteString("*/\n")
+			// line directives to preserve line numbers of functions (for accurate panic stack traces)
+			// https://github.com/golang/go/blob/master/src/cmd/compile/doc.go#L171
+			if preserveLineNumbers && patch.fnBody != nil && len(patch.fnBody.List) > 0 {
+				buf.WriteString("\n/*line ")
+				buf.WriteString(fset.Position(patch.fnBody.List[0].Pos()).String())
+				buf.WriteString("*/")
+			}
+
+			buf.WriteRune('\n')
 		}
 
 		pos := int(patch.pos) - offset

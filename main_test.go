@@ -49,13 +49,13 @@ func TestApp(t *testing.T) {
 		assertEqFile(t, "./internal/testdata/instrumented/basic.go.exp", f)
 	})
 
-	t.Run("when not preserving line numbers, then not no line number directives", func(t *testing.T) {
+	t.Run("when not preserving line numbers, then no line number directives", func(t *testing.T) {
 		f := randFileName(t)
 		if err := copy("./internal/testdata/basic.go", f); err != nil {
 			t.Fatal(err)
 		}
 
-		cmd := exec.Command(testbin, "-w", "-preserve-line-numbers=false", "-filename", f)
+		cmd := exec.Command(testbin, "-w", "--preserve-line-numbers=false", "-filename", f)
 		cmd.Env = append(cmd.Environ(), "GOCOVERDIR=./coverage")
 		if err := cmd.Run(); err != nil {
 			t.Error(err)
