@@ -49,6 +49,20 @@ func TestApp(t *testing.T) {
 		assertEqFile(t, "./internal/testdata/instrumented/basic.go.exp", f)
 	})
 
+	t.Run("when not preserving line numbers, then no line number directives", func(t *testing.T) {
+		f := randFileName(t)
+		if err := copy("./internal/testdata/basic.go", f); err != nil {
+			t.Fatal(err)
+		}
+
+		cmd := exec.Command(testbin, "-w", "--preserve-line-numbers=false", "-filename", f)
+		cmd.Env = append(cmd.Environ(), "GOCOVERDIR=./coverage")
+		if err := cmd.Run(); err != nil {
+			t.Error(err)
+		}
+		assertEqFile(t, "./internal/testdata/instrumented/basic_no_line.go.exp", f)
+	})
+
 	t.Run("skip file", func(t *testing.T) {
 		t.Run("generated file", func(t *testing.T) {
 			file := "./internal/testdata/skipped_generated.go"
@@ -144,7 +158,7 @@ func assertEqFile(t *testing.T, a, b string) {
 		lineB := normalizeLineDirective(lb[i])
 
 		if lineA != lineB {
-			t.Errorf("files are different at line(%d)\n%s\n%s\n", i, la[i], lb[i])
+			t.Errorf("files are different at line(%d)\n%s\n===\n%s\n", i, la[i], lb[i])
 		}
 	}
 }
@@ -198,7 +212,7 @@ func TestPanicLineNumbers(t *testing.T) {
 		if err := copy(tc, path.Join(dir, "main_instrumented.go")); err != nil {
 			t.Fatal(err)
 		}
-		if err := exec.Command(testbin, "-w", "-filename", path.Join(dir, "main_instrumented.go")).Run(); err != nil {
+		if err := exec.Command(testbin, "-w", "--preserve-line-numbers", "-filename", path.Join(dir, "main_instrumented.go")).Run(); err != nil {
 			t.Fatal(err)
 		}
 

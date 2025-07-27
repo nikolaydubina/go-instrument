@@ -16,24 +16,26 @@ import (
 
 func main() {
 	var (
-		fileName      string
-		overwrite     bool
-		app           string
-		skipGenerated bool
+		fileName            string
+		overwrite           bool
+		app                 string
+		skipGenerated       bool
+		preserveLineNumbers bool
 	)
 	flag.StringVar(&fileName, "filename", "", "go file to instrument")
 	flag.StringVar(&app, "app", "app", "name of application")
 	flag.BoolVar(&overwrite, "w", false, "overwrite original file")
 	flag.BoolVar(&skipGenerated, "skip-generated", false, "skip generated files")
+	flag.BoolVar(&preserveLineNumbers, "preserve-line-numbers", true, "use compiler directives to preserve line numbers as if no instrumentation was applied (e.g. keep same line numbers in panic as if no instrumentation)")
 	flag.Parse()
 
-	if err := process(fileName, app, overwrite, skipGenerated); err != nil {
+	if err := process(fileName, app, overwrite, skipGenerated, preserveLineNumbers); err != nil {
 		os.Stderr.WriteString(err.Error())
 		os.Exit(1)
 	}
 }
 
-func process(fileName, app string, overwrite, skipGenerated bool) error {
+func process(fileName, app string, overwrite, skipGenerated, preserveLineNumbers bool) error {
 	if fileName == "" {
 		return errors.New("missing file name")
 	}
@@ -63,10 +65,11 @@ func process(fileName, app string, overwrite, skipGenerated bool) error {
 			TracerName:             app,
 			ErrorStatusDescription: "error",
 		},
-		SpanName:       processor.BasicSpanName,
-		ContextPackage: "context",
-		ContextType:    "Context",
-		ErrorType:      `error`,
+		PreserveLineNumbers: preserveLineNumbers,
+		SpanName:            processor.BasicSpanName,
+		ContextPackage:      "context",
+		ContextType:         "Context",
+		ErrorType:           `error`,
 	}
 
 	if err := p.Process(fset, file); err != nil {
