@@ -15,7 +15,7 @@ type patch struct {
 	fnBody *ast.BlockStmt
 }
 
-func patchFile(fset *token.FileSet, file *ast.File, patches ...patch) error {
+func patchFile(fset *token.FileSet, file *ast.File, preserveLineNumbers bool, patches ...patch) error {
 	// patches must be applied in the ascending order, otherwise the modified source file will become corrupted.
 	sort.Slice(patches, func(i, j int) bool { return patches[i].pos < patches[j].pos })
 
@@ -39,7 +39,7 @@ func patchFile(fset *token.FileSet, file *ast.File, patches ...patch) error {
 
 		// line directives to preserve line numbers of functions (for accurate panic stack traces)
 		// https://github.com/golang/go/blob/master/src/cmd/compile/doc.go#L171
-		if patch.fnBody != nil && len(patch.fnBody.List) > 0 && len(patch.stmts) > 0 {
+		if preserveLineNumbers && patch.fnBody != nil && len(patch.fnBody.List) > 0 && len(patch.stmts) > 0 {
 			buf.WriteString("\n/*line ")
 			buf.WriteString(fset.Position(patch.fnBody.List[0].Pos()).String())
 			buf.WriteString("*/\n")
@@ -52,7 +52,9 @@ func patchFile(fset *token.FileSet, file *ast.File, patches ...patch) error {
 	}
 
 	// post-process the source to ensure line directives are immediately before statements
-	src = cleanupLineDirectives(src)
+	if preserveLineNumbers {
+		src = cleanupLineDirectives(src)
+	}
 
 	nfile, err := parser.ParseFile(fset, fset.Position(file.Pos()).Filename, src, parser.ParseComments)
 	if err != nil {

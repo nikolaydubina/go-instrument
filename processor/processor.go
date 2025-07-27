@@ -25,6 +25,7 @@ func BasicSpanName(receiver, function string) string {
 // Processor traverses AST, collects details on functions and methods, and invokes Instrumenter
 type Processor struct {
 	Instrumenter                Instrumenter
+	PreserveLineNumbers         bool // if true, use compile directives to preserve line numbers as if no instrumentation was applied
 	SpanName                    func(receiver, function string) string
 	ContextPackage, ContextType string // context is detected automatically based on matching package and symbol name
 	ErrorType                   string // error is detected by error type
@@ -182,7 +183,7 @@ func (p *Processor) Process(fset *token.FileSet, file *ast.File) error {
 	})
 
 	if len(patches) > 0 {
-		if err := patchFile(fset, file, patches...); err != nil {
+		if err := patchFile(fset, file, p.PreserveLineNumbers, patches...); err != nil {
 			return err
 		}
 		for _, pkg := range p.Instrumenter.Imports() {
