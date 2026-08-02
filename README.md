@@ -1,9 +1,5 @@
 # ⚡️ go-instrument
 
-<p align="center">
-  ✨ Sponsored by <a href="https://ndx.one/?ct=github">NDX Technologies</a>
-</p>
-
 [![codecov](https://codecov.io/gh/nikolaydubina/go-instrument/branch/master/graph/badge.svg?token=pXGPrKmAbT)](https://codecov.io/gh/nikolaydubina/go-instrument)
 [![Go Report Card](https://goreportcard.com/badge/github.com/nikolaydubina/go-instrument)](https://goreportcard.com/report/github.com/nikolaydubina/go-instrument)
 [![Go Reference](https://pkg.go.dev/badge/github.com/nikolaydubina/go-instrument.svg)](https://pkg.go.dev/github.com/nikolaydubina/go-instrument)
